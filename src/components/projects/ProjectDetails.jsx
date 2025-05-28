@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  DialogContentText,
   TextField,
   FormControl,
   InputLabel,
@@ -28,10 +29,14 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Divider,
   Tooltip,
   Fade,
   Skeleton,
+  useTheme,
+  useMediaQuery,
+  Badge,
+  ListItemButton,
+  CircularProgress,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -42,8 +47,18 @@ import {
   Assignment,
   CheckCircle,
   Timeline,
+  CalendarToday,
+  InfoOutlined,
+  PeopleOutline,
+  BarChart,
+  AccountCircle,
+  CheckCircleOutline,
+  DonutLarge,
+  Cached,
+  HourglassEmpty,
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
+import { stringToColor } from "../../helpers/stringToColor";
 
 const statusOptions = [
   { value: "planning", label: "Planning", color: "#A5C9FF" },
@@ -69,14 +84,26 @@ const ProjectDetails = () => {
     createTask,
     updateTask,
   } = useProject();
-
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [project, setProject] = useState(null);
   const [projectTasks, setProjectTasks] = useState([]);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+
+  // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Loading states
+  const [isSubmitting, setIsSubmitting] = useState({
+    projectEdit: false,
+    projectDelete: false,
+    taskCreate: false,
+    taskUpdate: null, // Stores the ID of the task being updated
+  });
 
   // Form states
   const [editForm, setEditForm] = useState({
@@ -141,32 +168,33 @@ const ProjectDetails = () => {
   };
 
   const handleEditProject = async () => {
+    setIsSubmitting((prev) => ({ ...prev, projectEdit: true }));
     try {
       await updateProject(id, editForm);
       setEditDialogOpen(false);
-      setMenuAnchorEl(null);
+      handleMenuClose();
     } catch (error) {
       console.error("Error updating project:", error);
+    } finally {
+      setIsSubmitting((prev) => ({ ...prev, projectEdit: false }));
     }
   };
 
-  const handleDeleteProject = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this project? This action cannot be undone."
-      )
-    ) {
-      try {
-        await deleteProject(id);
-        navigate("/projects");
-      } catch (error) {
-        console.error("Error deleting project:", error);
-      }
+  const handleConfirmDelete = async () => {
+    setIsSubmitting((prev) => ({ ...prev, projectDelete: true }));
+    try {
+      await deleteProject(id);
+      navigate("/projects");
+    } catch (error) {
+      console.error("Error deleting project:", error);
+    } finally {
+      setIsSubmitting((prev) => ({ ...prev, projectDelete: false }));
+      setDeleteDialogOpen(false);
     }
-    setMenuAnchorEl(null);
   };
 
   const handleCreateTask = async () => {
+    setIsSubmitting((prev) => ({ ...prev, taskCreate: true }));
     try {
       await createTask({
         ...taskForm,
@@ -183,14 +211,19 @@ const ProjectDetails = () => {
       });
     } catch (error) {
       console.error("Error creating task:", error);
+    } finally {
+      setIsSubmitting((prev) => ({ ...prev, taskCreate: false }));
     }
   };
 
   const handleTaskStatusChange = async (taskId, newStatus) => {
+    setIsSubmitting((prev) => ({ ...prev, taskUpdate: taskId }));
     try {
       await updateTask(taskId, { status: newStatus });
     } catch (error) {
       console.error("Error updating task:", error);
+    } finally {
+      setIsSubmitting((prev) => ({ ...prev, taskUpdate: null }));
     }
   };
 
@@ -259,40 +292,65 @@ const ProjectDetails = () => {
 
   return (
     <Fade in={true} timeout={600}>
-      <Box>
+      <Box sx={{ pb: 4 }}>
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
+            flexDirection: isMobile ? "column" : "row",
             justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "center",
             mb: 4,
+            gap: 2,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
             <Button
+              variant="outlined"
+              color="primary"
               startIcon={<ArrowBack />}
               onClick={() => navigate("/projects")}
-              sx={{ color: "text.secondary" }}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                fontWeight: 600,
+                borderWidth: 2,
+                "&:hover": {
+                  borderWidth: 2,
+                },
+              }}
             >
-              Back to Projects
+              Back
             </Button>
-            <Box sx={{ borderLeft: "2px solid #E0E0E0", height: 24, mx: 1 }} />
+
             <Box>
               <Typography
-                variant="h4"
+                variant={isMobile ? "h5" : "h4"}
                 component="h1"
                 sx={{
                   fontWeight: 700,
-                  background: "linear-gradient(135deg, #8B7EC8, #6B5B95)",
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  color: theme.palette.text.primary,
+                  lineHeight: 1.2,
                 }}
               >
                 {project.name}
               </Typography>
               <Box
-                sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1 }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  mt: 0.5,
+                  flexWrap: "wrap",
+                }}
               >
                 <Chip
                   label={
@@ -300,9 +358,10 @@ const ProjectDetails = () => {
                   }
                   size="small"
                   sx={{
-                    backgroundColor: getStatusColor(project.status),
-                    color: "white",
+                    backgroundColor: getStatusColor(project.status) + "20",
+                    color: getStatusColor(project.status),
                     fontWeight: 600,
+                    border: `1px solid ${getStatusColor(project.status)}40`,
                   }}
                 />
                 <Chip
@@ -311,27 +370,80 @@ const ProjectDetails = () => {
                       ?.label
                   }
                   size="small"
-                  variant="outlined"
                   sx={{
-                    borderColor: getPriorityColor(project.priority),
+                    backgroundColor: getPriorityColor(project.priority) + "20",
                     color: getPriorityColor(project.priority),
+                    fontWeight: 600,
+                    border: `1px solid ${getPriorityColor(project.priority)}40`,
                   }}
                 />
+                {project.dueDate && (
+                  <Chip
+                    icon={<CalendarToday fontSize="small" />}
+                    label={formatDate(project.dueDate)}
+                    size="small"
+                    sx={{
+                      backgroundColor: isOverdue
+                        ? "#FFAAA520"
+                        : "rgba(139, 126, 200, 0.1)",
+                      color: isOverdue ? "#FFAAA5" : "text.secondary",
+                      fontWeight: 500,
+                    }}
+                  />
+                )}
               </Box>
             </Box>
           </Box>
-          <IconButton onClick={handleMenuClick}>
-            <MoreVert />
-          </IconButton>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Add />}
+              onClick={() => setTaskDialogOpen(true)}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                fontWeight: 600,
+                boxShadow: "none",
+                "&:hover": {
+                  boxShadow: "0 2px 8px rgba(139, 126, 200, 0.4)",
+                },
+              }}
+            >
+              Add Task
+            </Button>
+            <IconButton
+              onClick={handleMenuClick}
+              sx={{
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: 2,
+                p: 1.5,
+              }}
+            >
+              <MoreVert />
+            </IconButton>
+          </Box>
         </Box>
-        <Grid container spacing={4}>
+
+        <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
-            <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: 3,
+                overflow: "hidden",
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            >
               <Box
                 sx={{
                   p: 3,
                   background:
-                    "linear-gradient(135deg, rgba(139, 126, 200, 0.1), rgba(181, 169, 214, 0.05))",
+                    "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Box
@@ -342,10 +454,10 @@ const ProjectDetails = () => {
                     mb: 2,
                   }}
                 >
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography variant="subtitle1" fontWeight={600}>
                     Project Progress
                   </Typography>
-                  <Typography variant="h4" fontWeight={700} color="primary">
+                  <Typography variant="h5" fontWeight={700} color="primary">
                     {progress}%
                   </Typography>
                 </Box>
@@ -353,11 +465,11 @@ const ProjectDetails = () => {
                   variant="determinate"
                   value={progress}
                   sx={{
-                    height: 12,
-                    borderRadius: 6,
+                    height: 10,
+                    borderRadius: 5,
                     backgroundColor: "rgba(139, 126, 200, 0.1)",
                     "& .MuiLinearProgress-bar": {
-                      borderRadius: 6,
+                      borderRadius: 5,
                       background:
                         progress === 100
                           ? "linear-gradient(90deg, #A8E6CF, #7FBF7F)"
@@ -369,51 +481,93 @@ const ProjectDetails = () => {
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    mt: 1,
+                    mt: 1.5,
                   }}
                 >
                   <Typography variant="body2" color="text.secondary">
-                    {
-                      projectTasks.filter((t) => t.status === "completed")
-                        .length
-                    }{" "}
-                    of {projectTasks.length} tasks completed
-                  </Typography>
-                  {project.dueDate && (
-                    <Typography
-                      variant="body2"
-                      sx={{ color: isOverdue ? "#FFAAA5" : "text.secondary" }}
+                    <Box
+                      component="span"
+                      sx={{ color: "text.primary", fontWeight: 600 }}
                     >
-                      Due {formatDate(project.dueDate)}
-                    </Typography>
-                  )}
+                      {
+                        projectTasks.filter((t) => t.status === "completed")
+                          .length
+                      }
+                    </Box>{" "}
+                    of{" "}
+                    <Box
+                      component="span"
+                      sx={{ color: "text.primary", fontWeight: 600 }}
+                    >
+                      {projectTasks.length}
+                    </Box>{" "}
+                    tasks completed
+                  </Typography>
                 </Box>
               </Box>
               <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                 <Tabs
                   value={tabValue}
                   onChange={(e, newValue) => setTabValue(newValue)}
+                  variant={isMobile ? "scrollable" : "standard"}
+                  scrollButtons={isMobile ? "auto" : false}
                 >
-                  <Tab label="Overview" />
-                  <Tab label={`Tasks (${projectTasks.length})`} />
-                  <Tab label="Activity" />
+                  <Tab
+                    label="Overview"
+                    sx={{ minWidth: isMobile ? "auto" : 120 }}
+                  />
+                  <Tab
+                    label={
+                      <Badge
+                        badgeContent={projectTasks.length}
+                        color="primary"
+                        sx={{ "& .MuiBadge-badge": { right: -10 } }}
+                      >
+                        Tasks
+                      </Badge>
+                    }
+                    sx={{ minWidth: isMobile ? "auto" : 120 }}
+                  />
+                  <Tab
+                    label="Activity"
+                    sx={{ minWidth: isMobile ? "auto" : 120 }}
+                  />
                 </Tabs>
               </Box>
               <Box sx={{ p: 3 }}>
                 {tabValue === 0 && (
+                  // Overview Tab Content (Unchanged)
                   <Box>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={600}
+                      gutterBottom
+                    >
                       Description
                     </Typography>
-                    <Typography
-                      variant="body1"
-                      color="text.secondary"
-                      sx={{ mb: 4, lineHeight: 1.7 }}
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 3,
+                        mb: 4,
+                        borderRadius: 2,
+                        backgroundColor: "action.hover",
+                      }}
                     >
-                      {project.description || "No description provided"}
-                    </Typography>
+                      <Typography
+                        variant="body1"
+                        color="text.secondary"
+                        sx={{ lineHeight: 1.7 }}
+                      >
+                        {project.description || "No description provided"}
+                      </Typography>
+                    </Paper>
 
-                    <Typography variant="h6" gutterBottom>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={600}
+                      gutterBottom
+                    >
                       Task Categories
                     </Typography>
                     <Grid container spacing={2}>
@@ -443,8 +597,15 @@ const ProjectDetails = () => {
                               elevation={0}
                               sx={{
                                 p: 2,
-                                border: "1px solid rgba(139, 126, 200, 0.1)",
+                                height: "100%",
+                                border: `1px solid ${theme.palette.divider}`,
                                 borderRadius: 2,
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  borderColor: "primary.main",
+                                  boxShadow:
+                                    "0 4px 12px rgba(139, 126, 200, 0.1)",
+                                },
                               }}
                             >
                               <Typography
@@ -459,7 +620,7 @@ const ProjectDetails = () => {
                                 color="text.secondary"
                                 sx={{ mb: 1 }}
                               >
-                                {completedCount}/{categoryTasks.length} tasks
+                                {completedCount} of {categoryTasks.length} tasks
                               </Typography>
                               <LinearProgress
                                 variant="determinate"
@@ -481,173 +642,212 @@ const ProjectDetails = () => {
                     </Grid>
                   </Box>
                 )}
-                {tabValue === 1 && (
-                  <Box>
+                {tabValue === 1 &&
+                  (projectTasks.length === 0 ? (
                     <Box
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 3,
+                        textAlign: "center",
+                        py: 6,
+                        border: "1px dashed",
+                        borderColor: "divider",
+                        borderRadius: 2,
                       }}
                     >
-                      <Typography variant="h6">
-                        Tasks ({projectTasks.length})
+                      <Assignment
+                        sx={{
+                          fontSize: 48,
+                          color: "text.secondary",
+                          mb: 2,
+                          opacity: 0.5,
+                        }}
+                      />
+                      <Typography
+                        variant="h6"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        No tasks yet
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 3 }}
+                      >
+                        Add your first task to get started
                       </Typography>
                       <Button
                         variant="contained"
                         startIcon={<Add />}
                         onClick={() => setTaskDialogOpen(true)}
-                        size="small"
                         sx={{ borderRadius: 2 }}
                       >
-                        Add Task
+                        Create Task
                       </Button>
                     </Box>
-                    {projectTasks.length === 0 ? (
-                      <Box sx={{ textAlign: "center", py: 6 }}>
-                        <Assignment
-                          sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
-                        />
-                        <Typography
-                          variant="h6"
-                          color="text.secondary"
-                          gutterBottom
+                  ) : (
+                    <List>
+                      {projectTasks.map((task) => (
+                        <ListItem
+                          key={task.id}
+                          disabled={isSubmitting.taskUpdate === task.id}
+                          sx={{
+                            borderRadius: 2,
+                            mb: 1,
+                            p: 0,
+                            background:
+                              "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                            border: (theme) =>
+                              `1px solid ${theme.palette.divider}`,
+                            "&:hover": {
+                              backgroundColor: "action.hover",
+                            },
+                          }}
                         >
-                          No tasks yet
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mb: 3 }}
-                        >
-                          Add your first task to get started
-                        </Typography>
-                        <Button
-                          variant="contained"
-                          startIcon={<Add />}
-                          onClick={() => setTaskDialogOpen(true)}
-                        >
-                          Add Task
-                        </Button>
-                      </Box>
-                    ) : (
-                      <List>
-                        {projectTasks.map((task, index) => (
-                          <React.Fragment key={task.id}>
-                            <ListItem
-                              sx={{
-                                borderRadius: 2,
-                                mb: 1,
-                                "&:hover": {
-                                  backgroundColor: "rgba(139, 126, 200, 0.05)",
-                                },
-                              }}
-                            >
-                              <ListItemIcon>
+                          <ListItemButton
+                            sx={{
+                              borderRadius: 2,
+                              py: 1.5,
+                              px: 2,
+                            }}
+                          >
+                            <ListItemIcon sx={{ minWidth: 40 }}>
+                              {isSubmitting.taskUpdate === task.id ? (
+                                <CircularProgress size={24} />
+                              ) : (
                                 <IconButton
                                   size="small"
-                                  onClick={() =>
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     handleTaskStatusChange(
                                       task.id,
                                       task.status === "completed"
                                         ? "pending"
                                         : "completed"
-                                    )
-                                  }
+                                    );
+                                  }}
+                                  sx={{
+                                    "&:hover": {
+                                      backgroundColor:
+                                        getStatusColor(task.status) + "20",
+                                    },
+                                  }}
                                 >
                                   <CheckCircle
                                     sx={{
                                       color:
                                         task.status === "completed"
                                           ? "#A8E6CF"
-                                          : "text.secondary",
+                                          : "text.disabled",
                                     }}
                                   />
                                 </IconButton>
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={
-                                  <Typography
-                                    variant="body1"
+                              )}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={
+                                <Typography
+                                  variant="body1"
+                                  sx={{
+                                    textDecoration:
+                                      task.status === "completed"
+                                        ? "line-through"
+                                        : "none",
+                                    color:
+                                      task.status === "completed"
+                                        ? "text.secondary"
+                                        : "text.primary",
+                                    fontWeight:
+                                      task.status === "completed" ? 400 : 500,
+                                  }}
+                                >
+                                  {task.name}
+                                </Typography>
+                              }
+                              secondary={
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    mt: 0.5,
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  <Chip
+                                    label={task.status}
+                                    size="small"
                                     sx={{
-                                      textDecoration:
-                                        task.status === "completed"
-                                          ? "line-through"
-                                          : "none",
-                                      color:
-                                        task.status === "completed"
-                                          ? "text.secondary"
-                                          : "text.primary",
+                                      height: 20,
+                                      fontSize: "0.65rem",
+                                      backgroundColor:
+                                        getStatusColor(task.status) + "20",
+                                      color: getStatusColor(task.status),
+                                      fontWeight: 600,
                                     }}
-                                  >
-                                    {task.name}
-                                  </Typography>
-                                }
-                                secondary={
-                                  <Box
+                                  />
+                                  <Chip
+                                    label={task.priority}
+                                    size="small"
                                     sx={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 1,
-                                      mt: 0.5,
+                                      height: 20,
+                                      fontSize: "0.65rem",
+                                      backgroundColor:
+                                        getPriorityColor(task.priority) + "20",
+                                      color: getPriorityColor(task.priority),
+                                      fontWeight: 600,
                                     }}
-                                  >
-                                    <Chip
-                                      label={task.status}
-                                      size="small"
-                                      sx={{
-                                        height: 20,
-                                        fontSize: "0.7rem",
-                                        backgroundColor: getStatusColor(
-                                          task.status
-                                        ),
-                                        color: "white",
-                                      }}
-                                    />
-                                    <Chip
-                                      label={task.priority}
-                                      size="small"
-                                      variant="outlined"
-                                      sx={{
-                                        height: 20,
-                                        fontSize: "0.7rem",
-                                        borderColor: getPriorityColor(
-                                          task.priority
-                                        ),
-                                        color: getPriorityColor(task.priority),
-                                      }}
-                                    />
-                                    {task.category && (
-                                      <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                      >
-                                        {task.category}
-                                      </Typography>
-                                    )}
-                                  </Box>
-                                }
-                              />
-                            </ListItem>
-                            {index < projectTasks.length - 1 && <Divider />}
-                          </React.Fragment>
-                        ))}
-                      </List>
-                    )}
-                  </Box>
-                )}
+                                  />
+                                  {task.category && (
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                    >
+                                      {task.category}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              }
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      ))}
+                    </List>
+                  ))}
                 {tabValue === 2 && (
                   <Box>
-                    <Typography variant="h6" gutterBottom>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={600}
+                      gutterBottom
+                    >
                       Recent Activity
                     </Typography>
-                    <Box sx={{ textAlign: "center", py: 6 }}>
+                    <Box
+                      sx={{
+                        textAlign: "center",
+                        py: 6,
+                        border: "1px dashed",
+                        borderColor: "divider",
+                        borderRadius: 2,
+                      }}
+                    >
                       <Timeline
-                        sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+                        sx={{
+                          fontSize: 48,
+                          color: "text.secondary",
+                          mb: 2,
+                          opacity: 0.5,
+                        }}
                       />
-                      <Typography variant="body1" color="text.secondary">
+                      <Typography variant="subtitle1" color="text.secondary">
                         Activity tracking coming soon
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
+                      >
+                        Track all project updates and team activity
                       </Typography>
                     </Box>
                   </Box>
@@ -657,197 +857,218 @@ const ProjectDetails = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
-                <Typography variant="h6" gutterBottom>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  background:
+                    "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                  border: `1px solid ${theme.palette.divider}`,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight={600}
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                >
+                  <InfoOutlined color="primary" />
                   Project Information
                 </Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Created
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(project.createdAt)}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Created by
-                    </Typography>
-                    <Typography variant="body1">
-                      {project.createdByName || "Unknown"}
-                    </Typography>
-                  </Box>
-                  {project.dueDate && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2.5,
+                    mt: 2,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <CalendarToday color="primary" />
                     <Box>
                       <Typography variant="body2" color="text.secondary">
                         Due Date
                       </Typography>
                       <Typography
                         variant="body1"
-                        sx={{ color: isOverdue ? "#FFAAA5" : "text.primary" }}
+                        fontWeight={500}
+                        sx={{
+                          color: isOverdue ? "error.main" : "text.primary",
+                        }}
                       >
                         {formatDate(project.dueDate)}
                         {isOverdue && " (Overdue)"}
                       </Typography>
                     </Box>
-                  )}
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <AccountCircle color="primary" />
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Created by
+                      </Typography>
+                      <Typography variant="body1" fontWeight={500}>
+                        {project.createdByName || "Unknown"}
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
               </Paper>
-              <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Team Members
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  background:
+                    "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                  border: `1px solid ${theme.palette.divider}`,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight={600}
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                >
+                  <PeopleOutline color="primary" />
+                  Team
                 </Typography>
                 {project.assignedTo && project.assignedTo.length > 0 ? (
-                  <Box>
-                    <AvatarGroup
-                      max={6}
-                      sx={{ justifyContent: "flex-start", mb: 2 }}
-                    >
-                      {project.assignedTo.map((member, index) => (
-                        <Tooltip
-                          key={index}
-                          title={member.name || member.email}
+                  <AvatarGroup
+                    max={8}
+                    sx={{ justifyContent: "flex-start", mt: 2 }}
+                  >
+                    {project.assignedTo.map((member) => (
+                      <Tooltip
+                        key={member.id}
+                        title={member.name || member.email}
+                        arrow
+                      >
+                        <Avatar
+                          sx={{
+                            bgcolor: stringToColor(member.name || member.email),
+                            border: `2px solid ${theme.palette.background.paper}`,
+                          }}
+                          src={member.photoURL}
                         >
-                          <Avatar
-                            sx={{ bgcolor: "primary.main" }}
-                            src={member.photoURL}
-                          >
-                            {(member.name || member.email || "TM")
-                              .charAt(0)
-                              .toUpperCase()}
-                          </Avatar>
-                        </Tooltip>
-                      ))}
-                    </AvatarGroup>
-                    <Typography variant="body2" color="text.secondary">
-                      {project.assignedTo.length} team member
-                      {project.assignedTo.length !== 1 ? "s" : ""}
-                    </Typography>
-                  </Box>
+                          {(member.name || member.email || "TM")
+                            .charAt(0)
+                            .toUpperCase()}
+                        </Avatar>
+                      </Tooltip>
+                    ))}
+                  </AvatarGroup>
                 ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    No team members assigned
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 2 }}
+                  >
+                    No members assigned.
                   </Typography>
                 )}
               </Paper>
-              <Paper elevation={0} sx={{ p: 3, borderRadius: 3 }}>
-                <Typography variant="h6" gutterBottom>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  background:
+                    "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                  border: `1px solid ${theme.palette.divider}`,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight={600}
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                >
+                  <BarChart color="primary" />
                   Quick Stats
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Box
-                      sx={{
-                        textAlign: "center",
-                        p: 2,
-                        borderRadius: 2,
-                        backgroundColor: "rgba(139, 126, 200, 0.1)",
-                      }}
-                    >
-                      <Typography variant="h4" fontWeight={700} color="primary">
-                        {projectTasks.length}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Total Tasks
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box
-                      sx={{
-                        textAlign: "center",
-                        p: 2,
-                        borderRadius: 2,
-                        backgroundColor: "rgba(168, 230, 207, 0.1)",
-                      }}
-                    >
-                      <Typography
-                        variant="h4"
-                        fontWeight={700}
-                        sx={{ color: "#A8E6CF" }}
+                <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                  {[
+                    {
+                      label: "Total Tasks",
+                      value: projectTasks.length,
+                      icon: <DonutLarge />,
+                      color: "primary",
+                    },
+                    {
+                      label: "Completed",
+                      value: getTasksByStatus("completed").length,
+                      icon: <CheckCircleOutline />,
+                      color: "success",
+                    },
+                    {
+                      label: "In Progress",
+                      value: getTasksByStatus("in-progress").length,
+                      icon: <Cached />,
+                      color: "warning",
+                    },
+                    {
+                      label: "Pending",
+                      value: getTasksByStatus("pending").length,
+                      icon: <HourglassEmpty />,
+                      color: "info",
+                    },
+                  ].map((stat) => (
+                    <Grid item xs={6} key={stat.label}>
+                      <Card
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          borderRadius: 3,
+                          textAlign: "left",
+                          backgroundColor:
+                            theme.palette[stat.color].light + "40",
+                          border: `1px solid ${
+                            theme.palette[stat.color].light + "80"
+                          }`,
+                        }}
                       >
-                        {getTasksByStatus("completed").length}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Completed
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box
-                      sx={{
-                        textAlign: "center",
-                        p: 2,
-                        borderRadius: 2,
-                        backgroundColor: "rgba(255, 211, 165, 0.1)",
-                      }}
-                    >
-                      <Typography
-                        variant="h4"
-                        fontWeight={700}
-                        sx={{ color: "#FFD3A5" }}
-                      >
-                        {getTasksByStatus("in-progress").length}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        In Progress
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box
-                      sx={{
-                        textAlign: "center",
-                        p: 2,
-                        borderRadius: 2,
-                        backgroundColor: "rgba(165, 201, 255, 0.1)",
-                      }}
-                    >
-                      <Typography
-                        variant="h4"
-                        fontWeight={700}
-                        sx={{ color: "#A5C9FF" }}
-                      >
-                        {getTasksByStatus("pending").length}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Pending
-                      </Typography>
-                    </Box>
-                  </Grid>
+                        <Box
+                          sx={{ color: theme.palette[stat.color].dark, mb: 1 }}
+                        >
+                          {stat.icon}
+                        </Box>
+                        <Typography
+                          variant="h5"
+                          fontWeight={700}
+                          sx={{ color: theme.palette[stat.color].dark }}
+                        >
+                          {stat.value}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: theme.palette[stat.color].dark,
+                            fontWeight: 500,
+                          }}
+                        >
+                          {stat.label}
+                        </Typography>
+                      </Card>
+                    </Grid>
+                  ))}
                 </Grid>
               </Paper>
             </Box>
           </Grid>
         </Grid>
-        <Menu
-          anchorEl={menuAnchorEl}
-          open={Boolean(menuAnchorEl)}
-          onClose={handleMenuClose}
-          PaperProps={{ sx: { borderRadius: 2, minWidth: 150 } }}
-        >
-          <MenuItem
-            onClick={() => {
-              setEditDialogOpen(true);
-              handleMenuClose();
-            }}
-          >
-            <Edit fontSize="small" sx={{ mr: 1 }} />
-            Edit Project
-          </MenuItem>
-          <MenuItem onClick={handleDeleteProject} sx={{ color: "error.main" }}>
-            <Delete fontSize="small" sx={{ mr: 1 }} />
-            Delete Project
-          </MenuItem>
-        </Menu>
         <Dialog
           open={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
           maxWidth="sm"
           fullWidth
+          PaperProps={{
+            sx: { borderRadius: 3, overflow: "hidden" },
+          }}
         >
-          <DialogTitle>Edit Project</DialogTitle>
+          {isSubmitting.projectEdit && <LinearProgress />}
+          <DialogTitle sx={{ fontWeight: 600 }}>Edit Project</DialogTitle>
           <DialogContent>
             <TextField
               fullWidth
@@ -857,6 +1078,7 @@ const ProjectDetails = () => {
                 setEditForm((prev) => ({ ...prev, name: e.target.value }))
               }
               sx={{ mb: 2, mt: 1 }}
+              disabled={isSubmitting.projectEdit}
             />
             <TextField
               fullWidth
@@ -871,10 +1093,11 @@ const ProjectDetails = () => {
               multiline
               rows={3}
               sx={{ mb: 2 }}
+              disabled={isSubmitting.projectEdit}
             />
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth disabled={isSubmitting.projectEdit}>
                   <InputLabel>Status</InputLabel>
                   <Select
                     value={editForm.status}
@@ -888,14 +1111,30 @@ const ProjectDetails = () => {
                   >
                     {statusOptions.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
-                        {option.label}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: "50%",
+                              backgroundColor: option.color,
+                            }}
+                          />
+                          {option.label}
+                        </Box>
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth disabled={isSubmitting.projectEdit}>
                   <InputLabel>Priority</InputLabel>
                   <Select
                     value={editForm.priority}
@@ -909,7 +1148,23 @@ const ProjectDetails = () => {
                   >
                     {priorityOptions.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
-                        {option.label}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: "50%",
+                              backgroundColor: option.color,
+                            }}
+                          />
+                          {option.label}
+                        </Box>
                       </MenuItem>
                     ))}
                   </Select>
@@ -917,10 +1172,21 @@ const ProjectDetails = () => {
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button variant="contained" onClick={handleEditProject}>
-              Save Changes
+          <DialogActions sx={{ p: 3, pt: 0 }}>
+            <Button
+              onClick={() => setEditDialogOpen(false)}
+              sx={{ borderRadius: 2, px: 3 }}
+              disabled={isSubmitting.projectEdit}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleEditProject}
+              sx={{ borderRadius: 2, px: 3, minWidth: 120 }}
+              disabled={isSubmitting.projectEdit}
+            >
+              {isSubmitting.projectEdit ? "Saving..." : "Save Changes"}
             </Button>
           </DialogActions>
         </Dialog>
@@ -929,8 +1195,12 @@ const ProjectDetails = () => {
           onClose={() => setTaskDialogOpen(false)}
           maxWidth="sm"
           fullWidth
+          PaperProps={{
+            sx: { borderRadius: 3, overflow: "hidden" },
+          }}
         >
-          <DialogTitle>Add New Task</DialogTitle>
+          {isSubmitting.taskCreate && <LinearProgress />}
+          <DialogTitle sx={{ fontWeight: 600 }}>Add New Task</DialogTitle>
           <DialogContent>
             <TextField
               fullWidth
@@ -940,6 +1210,7 @@ const ProjectDetails = () => {
                 setTaskForm((prev) => ({ ...prev, name: e.target.value }))
               }
               sx={{ mb: 2, mt: 1 }}
+              disabled={isSubmitting.taskCreate}
             />
             <TextField
               fullWidth
@@ -954,10 +1225,11 @@ const ProjectDetails = () => {
               multiline
               rows={2}
               sx={{ mb: 2 }}
+              disabled={isSubmitting.taskCreate}
             />
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth disabled={isSubmitting.taskCreate}>
                   <InputLabel>Status</InputLabel>
                   <Select
                     value={taskForm.status}
@@ -976,7 +1248,7 @@ const ProjectDetails = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth disabled={isSubmitting.taskCreate}>
                   <InputLabel>Priority</InputLabel>
                   <Select
                     value={taskForm.priority}
@@ -996,17 +1268,96 @@ const ProjectDetails = () => {
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setTaskDialogOpen(false)}>Cancel</Button>
+          <DialogActions sx={{ p: 3, pt: 0 }}>
+            <Button
+              onClick={() => setTaskDialogOpen(false)}
+              sx={{ borderRadius: 2, px: 3 }}
+              disabled={isSubmitting.taskCreate}
+            >
+              Cancel
+            </Button>
             <Button
               variant="contained"
               onClick={handleCreateTask}
-              disabled={!taskForm.name.trim()}
+              disabled={!taskForm.name.trim() || isSubmitting.taskCreate}
+              sx={{ borderRadius: 2, px: 3, minWidth: 100 }}
             >
-              Add Task
+              {isSubmitting.taskCreate ? "Adding..." : "Add Task"}
             </Button>
           </DialogActions>
         </Dialog>
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
+        >
+          {isSubmitting.projectDelete && <LinearProgress color="error" />}
+          <DialogTitle sx={{ fontWeight: 600 }}>Delete Project</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete the project "<b>{project.name}</b>
+              "? This action is permanent and cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, pt: 0 }}>
+            <Button
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isSubmitting.projectDelete}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              color="error"
+              variant="contained"
+              disabled={isSubmitting.projectDelete}
+              sx={{ minWidth: 120 }}
+            >
+              {isSubmitting.projectDelete ? "Deleting..." : "Delete Project"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Menu
+          anchorEl={menuAnchorEl}
+          open={Boolean(menuAnchorEl)}
+          onClose={handleMenuClose}
+          PaperProps={{
+            sx: {
+              borderRadius: 2,
+              minWidth: 180,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            },
+          }}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "right",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              setEditDialogOpen(true);
+              handleMenuClose();
+            }}
+            sx={{ py: 1 }}
+          >
+            <Edit fontSize="small" sx={{ mr: 1, color: "text.secondary" }} />
+            Edit Project
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setDeleteDialogOpen(true);
+              handleMenuClose();
+            }}
+            sx={{ py: 1, color: "error.main" }}
+          >
+            <Delete fontSize="small" sx={{ mr: 1 }} />
+            Delete Project
+          </MenuItem>
+        </Menu>
       </Box>
     </Fade>
   );

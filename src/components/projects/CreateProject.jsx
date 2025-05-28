@@ -23,6 +23,8 @@ import {
   Alert,
   Fade,
   Collapse,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
@@ -33,6 +35,7 @@ import {
   Assignment,
   Group,
   AccessTime,
+  NavigateNext,
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
 
@@ -74,6 +77,8 @@ const priorityOptions = [
 
 const CreateProject = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [errors, setErrors] = useState({});
   const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -189,7 +194,6 @@ const CreateProject = () => {
 
   const validateStep = (step) => {
     const newErrors = {};
-
     switch (step) {
       case 0:
         if (!formData.name.trim()) newErrors.name = "Project name is required";
@@ -201,14 +205,7 @@ const CreateProject = () => {
           newErrors.categories = "Please select at least one category";
         }
         break;
-      case 2:
-        // Team assignment is optional
-        break;
-      case 3:
-        // Timeline is optional but can validate date logic
-        break;
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -239,8 +236,8 @@ const CreateProject = () => {
         })),
       };
 
-      const projectId = await createProject(projectData);
-      navigate(`/projects/${projectId}`);
+      await createProject(projectData);
+      navigate("/projects");
     } catch (error) {
       console.error("Error creating project:", error);
     } finally {
@@ -252,7 +249,7 @@ const CreateProject = () => {
     switch (step) {
       case 0:
         return (
-          <Box sx={{ space: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <TextField
               fullWidth
               label="Project Name"
@@ -260,7 +257,6 @@ const CreateProject = () => {
               onChange={(e) => handleInputChange("name", e.target.value)}
               error={!!errors.name}
               helperText={errors.name}
-              sx={{ mb: 3 }}
             />
             <TextField
               fullWidth
@@ -271,7 +267,6 @@ const CreateProject = () => {
               rows={4}
               error={!!errors.description}
               helperText={errors.description}
-              sx={{ mb: 3 }}
             />
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
@@ -287,7 +282,11 @@ const CreateProject = () => {
                     {statusOptions.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
                         <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
                         >
                           <Box
                             sx={{
@@ -317,7 +316,11 @@ const CreateProject = () => {
                     {priorityOptions.map((option) => (
                       <MenuItem key={option.value} value={option.value}>
                         <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
                         >
                           <Box
                             sx={{
@@ -337,124 +340,147 @@ const CreateProject = () => {
             </Grid>
           </Box>
         );
-
       case 1:
         return (
           <Box>
-            {errors.categories && (
+            <Collapse in={!!errors.categories}>
               <Alert severity="error" sx={{ mb: 3 }}>
                 {errors.categories}
               </Alert>
-            )}
+            </Collapse>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               Select the categories that apply to your project. Default tasks
               will be included for each category.
             </Typography>
             <Grid container spacing={2}>
-              {categories.map((category) => (
-                <Grid item xs={12} key={category.id}>
-                  <Card
-                    sx={{
-                      border: formData.selectedCategories.includes(category.id)
-                        ? `2px solid ${category.color}`
-                        : "2px solid transparent",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease-in-out",
-                      "&:hover": {
-                        boxShadow: "0 4px 12px rgba(139, 126, 200, 0.15)",
-                      },
-                    }}
-                    onClick={() => handleCategoryToggle(category.id)}
-                  >
-                    <CardContent>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 2,
-                          mb: 2,
-                        }}
-                      >
-                        <Checkbox
-                          checked={formData.selectedCategories.includes(
-                            category.id
-                          )}
-                          sx={{ color: category.color }}
-                        />
+              {categories.map((category) => {
+                const isCategorySelected = formData.selectedCategories.includes(
+                  category.id
+                );
+
+                return (
+                  <Grid item xs={12} key={category.id}>
+                    <Card
+                      elevation={0}
+                      sx={{
+                        border: `2px solid`,
+                        borderColor: isCategorySelected
+                          ? category.color
+                          : `${category.color}40`,
+                        backgroundColor: isCategorySelected
+                          ? `${category.color}1A`
+                          : "transparent",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease-in-out",
+                        "&:hover": {
+                          borderColor: category.color,
+                          boxShadow: `0 4px 20px ${category.color}40`,
+                          transform: "translateY(-2px)",
+                        },
+                        borderRadius: 2,
+                      }}
+                      onClick={() => handleCategoryToggle(category.id)}
+                    >
+                      <CardContent>
                         <Box
                           sx={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: "50%",
-                            backgroundColor: category.color,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            mb: isCategorySelected ? 2 : 0,
                           }}
-                        />
-                        <Typography variant="h6" fontWeight={600}>
-                          {category.name}
-                        </Typography>
-                      </Box>
-                      <Collapse
-                        in={formData.selectedCategories.includes(category.id)}
-                      >
-                        <Box sx={{ ml: 4 }}>
-                          {category.subcategories?.map((subcategory) => (
-                            <Box key={subcategory.name} sx={{ mb: 2 }}>
-                              <Typography
-                                variant="subtitle2"
-                                fontWeight={600}
-                                gutterBottom
-                              >
-                                {subcategory.name}
-                              </Typography>
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 1,
-                                }}
-                              >
-                                {subcategory.tasks.map((task, taskIndex) => {
-                                  const isSelected =
-                                    formData.selectedTasks[category.id]?.[
-                                      subcategory.name
-                                    ]?.[taskIndex]?.selected;
-                                  return (
-                                    <Chip
-                                      key={taskIndex}
-                                      label={task}
-                                      size="small"
-                                      variant={
-                                        isSelected ? "filled" : "outlined"
-                                      }
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleTaskToggle(
-                                          category.id,
-                                          subcategory.name,
-                                          taskIndex
-                                        );
-                                      }}
-                                      sx={{
-                                        backgroundColor: isSelected
-                                          ? `${category.color}20`
-                                          : "transparent",
-                                        borderColor: category.color,
-                                        color: isSelected
-                                          ? category.color
-                                          : "text.secondary",
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </Box>
-                            </Box>
-                          ))}
+                        >
+                          <Checkbox
+                            checked={isCategorySelected}
+                            sx={{
+                              color: category.color,
+                              "&.Mui-checked": { color: category.color },
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              backgroundColor: category.color,
+                            }}
+                          />
+                          <Typography variant="h6" fontWeight={600}>
+                            {category.name}
+                          </Typography>
                         </Box>
-                      </Collapse>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+                        <Collapse in={isCategorySelected}>
+                          <Box sx={{ pl: isMobile ? 2 : 4, pt: 2 }}>
+                            {category.subcategories?.map((subcategory) => (
+                              <Box key={subcategory.name} sx={{ mb: 2 }}>
+                                <Typography
+                                  variant="subtitle2"
+                                  fontWeight={600}
+                                  color="text.primary"
+                                  gutterBottom
+                                >
+                                  {subcategory.name}
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 1,
+                                  }}
+                                >
+                                  {subcategory.tasks.map((task, taskIndex) => {
+                                    const isTaskSelected =
+                                      formData.selectedTasks[category.id]?.[
+                                        subcategory.name
+                                      ]?.[taskIndex]?.selected;
+                                    return (
+                                      <Chip
+                                        key={taskIndex}
+                                        label={task}
+                                        size="small"
+                                        variant={
+                                          isTaskSelected ? "filled" : "outlined"
+                                        }
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleTaskToggle(
+                                            category.id,
+                                            subcategory.name,
+                                            taskIndex
+                                          );
+                                        }}
+                                        sx={{
+                                          fontWeight: 500,
+                                          // Styles for SELECTED chips
+                                          ...(isTaskSelected && {
+                                            backgroundColor: `${category.color}30`,
+                                            color: category.color,
+                                            borderColor: `${category.color}80`,
+                                            border: "1px solid",
+                                          }),
+                                          // Styles for UNSELECTED chips
+                                          ...(!isTaskSelected && {
+                                            borderColor: `${category.color}80`,
+                                            color: `${category.color}`,
+                                          }),
+                                          "&:hover": {
+                                            backgroundColor: `${category.color}40`,
+                                            color: category.color,
+                                          },
+                                        }}
+                                      />
+                                    );
+                                  })}
+                                </Box>
+                              </Box>
+                            ))}
+                          </Box>
+                        </Collapse>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
             </Grid>
           </Box>
         );
@@ -465,7 +491,6 @@ const CreateProject = () => {
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
               Select team members to assign to this project (optional).
             </Typography>
-
             <Autocomplete
               multiple
               options={employees}
@@ -481,7 +506,10 @@ const CreateProject = () => {
                     label={option.name || option.email}
                     {...getTagProps({ index })}
                     key={option.id}
-                    sx={{ borderColor: "#8B7EC8", color: "#8B7EC8" }}
+                    sx={{
+                      borderColor: theme.palette.primary.main,
+                      color: theme.palette.primary.main,
+                    }}
                   />
                 ))
               }
@@ -496,123 +524,212 @@ const CreateProject = () => {
             />
             {employees.length === 0 && (
               <Alert severity="info">
-                No team members found. You can add team members later from the
-                employees section.
+                No team members found. You can add them in the 'Employees'
+                section and they will appear here.
               </Alert>
             )}
           </Box>
         );
 
-      case 3:
+      case 3: {
+        const selectedStatus = statusOptions.find(
+          (s) => s.value === formData.status
+        );
+        const selectedPriority = priorityOptions.find(
+          (p) => p.value === formData.priority
+        );
+
         return (
           <Box>
             <DatePicker
               label="Due Date (Optional)"
               value={formData.dueDate}
               onChange={(newValue) => handleInputChange("dueDate", newValue)}
-              renderInput={(params) => (
-                <TextField {...params} fullWidth sx={{ mb: 3 }} />
-              )}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  sx: {
+                    mb: 3,
+                    "& .MuiOutlinedInput-root": {
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: theme.palette.primary.light,
+                      },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: theme.palette.primary.main,
+                        borderWidth: "2px",
+                      },
+                    },
+                  },
+                },
+              }}
             />
             <Divider sx={{ my: 3 }} />
             <Typography variant="h6" gutterBottom>
               Project Summary
             </Typography>
             <Grid container spacing={3}>
+              {/* Project Details Summary Card */}
               <Grid item xs={12} md={6}>
                 <Paper
                   elevation={0}
-                  sx={{ p: 2, backgroundColor: "rgba(139, 126, 200, 0.05)" }}
+                  sx={{
+                    p: 2.5,
+                    backgroundColor: `${theme.palette.primary.main}0D`,
+                    border: `1px solid ${theme.palette.primary.main}40`,
+                    height: "100%",
+                    borderRadius: 2,
+                  }}
                 >
                   <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
+                    variant="subtitle1"
+                    fontWeight={600}
+                    color="primary.main"
                     gutterBottom
                   >
                     Project Details
                   </Typography>
-                  <Typography variant="body2">
-                    <strong>Name:</strong> {formData.name}
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Name:</strong> {formData.name || "Not specified"}
                   </Typography>
-                  <Typography variant="body2">
-                    <strong>Status:</strong>{" "}
-                    {
-                      statusOptions.find((s) => s.value === formData.status)
-                        ?.label
-                    }
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <strong>Status:</strong>
+                    <Chip
+                      label={selectedStatus?.label}
+                      size="small"
+                      sx={{
+                        backgroundColor: `${selectedStatus?.color}40`,
+                        color: `${selectedStatus?.color}`,
+                        fontWeight: 600,
+                      }}
+                    />
                   </Typography>
-                  <Typography variant="body2">
-                    <strong>Priority:</strong>{" "}
-                    {
-                      priorityOptions.find((p) => p.value === formData.priority)
-                        ?.label
-                    }
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mb: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <strong>Priority:</strong>
+                    <Chip
+                      label={selectedPriority?.label}
+                      size="small"
+                      sx={{
+                        backgroundColor: `${selectedPriority?.color}40`,
+                        color: `${selectedPriority?.color}`,
+                        fontWeight: 600,
+                      }}
+                    />
                   </Typography>
                   {formData.dueDate && (
                     <Typography variant="body2">
                       <strong>Due Date:</strong>{" "}
-                      {formData.dueDate.toLocaleDateString()}
+                      {new Date(formData.dueDate).toLocaleDateString()}
                     </Typography>
                   )}
                 </Paper>
               </Grid>
+
+              {/* Team & Tasks Summary Card */}
               <Grid item xs={12} md={6}>
                 <Paper
                   elevation={0}
-                  sx={{ p: 2, backgroundColor: "rgba(139, 126, 200, 0.05)" }}
+                  sx={{
+                    p: 2.5,
+                    backgroundColor: `${theme.palette.primary.main}0D`,
+                    border: `1px solid ${theme.palette.primary.main}40`,
+                    height: "100%",
+                    borderRadius: 2,
+                  }}
                 >
                   <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
+                    variant="subtitle1"
+                    fontWeight={600}
+                    color="primary.main"
                     gutterBottom
                   >
                     Team & Tasks
                   </Typography>
-                  <Typography variant="body2">
-                    <strong>Team Members:</strong> {formData.assignedTo.length}
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    <strong>Team Members:</strong> {formData.assignedTo.length}{" "}
+                    assigned
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ mb: 1 }}>
                     <strong>Categories:</strong>{" "}
-                    {formData.selectedCategories.length}
+                    {formData.selectedCategories.length} selected
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Total Tasks:</strong> {selectedTasksPreview.length}
+                    <strong>Total Tasks:</strong> {selectedTasksPreview.length}{" "}
+                    tasks
                   </Typography>
                 </Paper>
               </Grid>
             </Grid>
+
+            {/* Selected Tasks Preview */}
             {selectedTasksPreview.length > 0 && (
-              <Box sx={{ mt: 3 }}>
+              <Box sx={{ mt: 4 }}>
                 <Typography
-                  variant="subtitle2"
+                  variant="subtitle1"
                   color="text.secondary"
+                  fontWeight={600}
                   gutterBottom
                 >
                   Selected Tasks ({selectedTasksPreview.length})
                 </Typography>
-                <Box
+                <Paper
+                  variant="outlined"
                   sx={{
+                    p: 1.5,
                     display: "flex",
                     flexWrap: "wrap",
                     gap: 1,
                     maxHeight: 200,
                     overflow: "auto",
+                    backgroundColor: "transparent",
+                    borderColor: theme.palette.divider,
+                    borderRadius: 2,
                   }}
                 >
-                  {selectedTasksPreview.map((task, index) => (
-                    <Chip
-                      key={index}
-                      label={`${task.categoryName}: ${task.taskName}`}
-                      size="small"
-                      variant="outlined"
-                      sx={{ borderColor: "#8B7EC8", color: "#8B7EC8" }}
-                    />
-                  ))}
-                </Box>
+                  {selectedTasksPreview.map((task, index) => {
+                    // Find the category to get its color
+                    const category = categories.find(
+                      (c) => c.name === task.categoryName
+                    );
+                    const taskColor = category
+                      ? category.color
+                      : theme.palette.grey[500];
+
+                    return (
+                      <Chip
+                        key={index}
+                        label={`${task.categoryName}: ${task.taskName}`}
+                        size="small"
+                        sx={{
+                          fontWeight: 500,
+                          backgroundColor: `${taskColor}26`,
+                          color: `${taskColor}`,
+                          border: `1px solid ${taskColor}80`,
+                        }}
+                      />
+                    );
+                  })}
+                </Paper>
               </Box>
             )}
           </Box>
         );
+      }
       default:
         return null;
     }
@@ -621,137 +738,178 @@ const CreateProject = () => {
   return (
     <Fade in={true} timeout={600}>
       <Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "center",
+            mb: 4,
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography
+              variant="h4"
+              component="h1"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              Create New Project
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Follow the steps to setup and launch your new project.
+            </Typography>
+          </Box>
           <Button
+            variant="contained"
+            color="primary"
             startIcon={<ArrowBack />}
             onClick={() => navigate("/projects")}
-            sx={{ color: "text.secondary" }}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1.5,
+              textTransform: "none",
+              fontWeight: 600,
+              boxShadow: "0 4px 12px rgba(139, 126, 200, 0.3)",
+              "&:hover": {
+                boxShadow: "0 6px 20px rgba(139, 126, 200, 0.4)",
+                transform: "translateY(-2px)",
+              },
+            }}
           >
             Back to Projects
           </Button>
-          <Box sx={{ borderLeft: "2px solid #E0E0E0", height: 24, mx: 1 }} />
-          <Typography
-            variant="h4"
-            component="h1"
+        </Box>
+        <Paper
+          elevation={0}
+          sx={{
+            p: isMobile ? 1 : 2,
+            background:
+              "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 3,
+            mb: 4,
+          }}
+        >
+          <Stepper activeStep={activeStep} alternativeLabel>
+            {steps.map((step) => (
+              <Step key={step.label}>
+                <StepLabel
+                  StepIconComponent={(props) => (
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: props.active
+                          ? theme.palette.primary.main
+                          : theme.palette.action.disabledBackground,
+                        color: props.active
+                          ? theme.palette.primary.contrastText
+                          : theme.palette.text.secondary,
+                        transition: "all 0.3s ease-in-out",
+                        boxShadow: props.active
+                          ? "0 3px 10px 0 rgba(0,0,0,.15)"
+                          : "none",
+                      }}
+                    >
+                      {props.completed ? <CheckCircle /> : step.icon}
+                    </Box>
+                  )}
+                >
+                  <Typography fontWeight={600}>{step.label}</Typography>
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Paper>
+        <Paper
+          elevation={0}
+          sx={{
+            p: isMobile ? 2 : 4,
+            background:
+              "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 3,
+          }}
+        >
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h5" gutterBottom fontWeight={600}>
+              {steps[activeStep].label}
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {steps[activeStep].description}
+            </Typography>
+          </Box>
+          <Divider sx={{ mb: 4 }} />
+
+          {renderStepContent(activeStep)}
+
+          <Box
             sx={{
-              fontWeight: 700,
-              background: "linear-gradient(135deg, #8B7EC8, #6B5B95)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+              display: "flex",
+              justifyContent: "space-between",
+              mt: 4,
+              pt: 3,
+              borderTop: `1px solid ${theme.palette.divider}`,
             }}
           >
-            Create New Project
-          </Typography>
-        </Box>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={4}>
-            <Paper
-              elevation={0}
-              sx={{ p: 3, height: "fit-content", position: "sticky", top: 20 }}
+            <Button
+              onClick={handleBack}
+              disabled={activeStep === 0}
+              sx={{ visibility: activeStep === 0 ? "hidden" : "visible" }}
             >
-              <Stepper activeStep={activeStep} orientation="vertical">
-                {steps.map((step, index) => (
-                  <Step key={step.label}>
-                    <StepLabel
-                      StepIconComponent={() => (
-                        <Box
-                          sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor:
-                              index <= activeStep
-                                ? "#8B7EC8"
-                                : "rgba(139, 126, 200, 0.2)",
-                            color:
-                              index <= activeStep ? "white" : "text.secondary",
-                            transition: "all 0.3s ease-in-out",
-                          }}
-                        >
-                          {index < activeStep ? <CheckCircle /> : step.icon}
-                        </Box>
-                      )}
-                    >
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {step.label}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {step.description}
-                      </Typography>
-                    </StepLabel>
-                  </Step>
-                ))}
-              </Stepper>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={8}>
-            <Paper elevation={0} sx={{ p: 4 }}>
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h5" gutterBottom fontWeight={600}>
-                  {steps[activeStep].label}
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  {steps[activeStep].description}
-                </Typography>
-              </Box>
-              {renderStepContent(activeStep)}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  mt: 4,
-                  pt: 3,
-                  borderTop: "1px solid #E0E0E0",
-                }}
-              >
+              Back
+            </Button>
+            <Box>
+              {activeStep === steps.length - 1 ? (
                 <Button
-                  onClick={handleBack}
-                  disabled={activeStep === 0}
-                  sx={{ visibility: activeStep === 0 ? "hidden" : "visible" }}
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  startIcon={<Save />}
+                  sx={{
+                    px: 3,
+                    py: 1.2,
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
                 >
-                  Back
+                  {isSubmitting ? "Creating..." : "Create Project"}
                 </Button>
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  {activeStep === steps.length - 1 ? (
-                    <Button
-                      variant="contained"
-                      onClick={handleSubmit}
-                      disabled={isSubmitting}
-                      startIcon={<Save />}
-                      sx={{
-                        px: 4,
-                        py: 1.5,
-                        borderRadius: 2,
-                        textTransform: "none",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {isSubmitting ? "Creating Project..." : "Create Project"}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="contained"
-                      onClick={handleNext}
-                      sx={{
-                        px: 4,
-                        py: 1.5,
-                        borderRadius: 2,
-                        textTransform: "none",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Continue
-                    </Button>
-                  )}
-                </Box>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNext}
+                  endIcon={<NavigateNext />}
+                  sx={{
+                    px: 3,
+                    py: 1.2,
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  Continue
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </Paper>
       </Box>
     </Fade>
   );

@@ -35,6 +35,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  DialogContentText,
+  CircularProgress,
 } from "@mui/material";
 import {
   Search,
@@ -81,6 +83,12 @@ const TaskList = () => {
     description: "",
     status: "",
     priority: "",
+  });
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [submittingState, setSubmittingState] = useState({
+    saving: false,
+    deleting: false,
+    updating: null, // will store the id of the task being updated
   });
 
   const filteredAndSortedTasks = useMemo(() => {
@@ -158,6 +166,7 @@ const TaskList = () => {
 
   const handleEditTask = () => {
     if (selectedTask) {
+      setSubmittingState((prev) => ({ ...prev, saving: true }));
       setEditForm({
         name: selectedTask.name || "",
         description: selectedTask.description || "",
@@ -165,40 +174,48 @@ const TaskList = () => {
         priority: selectedTask.priority || "medium",
       });
       setEditDialogOpen(true);
+      setSubmittingState((prev) => ({ ...prev, saving: false }));
     }
     handleMenuClose();
   };
 
   const handleDeleteTask = async () => {
-    if (
-      selectedTask &&
-      window.confirm("Are you sure you want to delete this task?")
-    ) {
+    if (selectedTask) {
+      setSubmittingState((prev) => ({ ...prev, deleting: true }));
       try {
         await deleteTask(selectedTask.id);
       } catch (error) {
         console.error("Error deleting task:", error);
+      } finally {
+        setSubmittingState((prev) => ({ ...prev, deleting: false }));
+        setOpenConfirmDialog(false);
+        handleMenuClose();
       }
     }
-    handleMenuClose();
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
+    setSubmittingState((prev) => ({ ...prev, updating: taskId }));
     try {
       await updateTask(taskId, { status: newStatus });
     } catch (error) {
       console.error("Error updating task status:", error);
+    } finally {
+      setSubmittingState((prev) => ({ ...prev, updating: null }));
     }
   };
 
   const handleSaveEdit = async () => {
     if (selectedTask) {
+      setSubmittingState((prev) => ({ ...prev, saving: true }));
       try {
         await updateTask(selectedTask.id, editForm);
         setEditDialogOpen(false);
         setSelectedTask(null);
       } catch (error) {
         console.error("Error updating task:", error);
+      } finally {
+        setSubmittingState((prev) => ({ ...prev, saving: false }));
       }
     }
   };
@@ -269,7 +286,7 @@ const TaskList = () => {
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => navigate("/projects/new")}
+            onClick={() => navigate("/create-project")}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -504,7 +521,7 @@ const TaskList = () => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => navigate("/projects/new")}
+                onClick={() => navigate("/create-project")}
                 sx={{
                   borderRadius: 2,
                   px: 4,
@@ -520,18 +537,28 @@ const TaskList = () => {
         ) : (
           <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
             <List sx={{ p: 0 }}>
-              {filteredAndSortedTasks.map((task, index) => (
-                <React.Fragment key={task.id}>
-                  <ListItem
-                    sx={{
-                      p: 3,
-                      cursor: "pointer",
-                      "&:hover": {
-                        backgroundColor: "rgba(139, 126, 200, 0.05)",
-                      },
-                    }}
-                  >
-                    <ListItemIcon>
+              {filteredAndSortedTasks.map((task) => (
+                <ListItem
+                  key={task.id}
+                  sx={(theme) => ({
+                    p: 3,
+                    cursor: "pointer",
+                    background:
+                      "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                    mx: 2,
+                    mb: 2,
+                    opacity: submittingState.updating === task.id ? 0.7 : 1,
+                    "&:hover": {
+                      backgroundColor: "rgba(139, 126, 200, 0.08)",
+                    },
+                  })}
+                >
+                  <ListItemIcon>
+                    {submittingState.updating === task.id ? (
+                      <CircularProgress size={24} />
+                    ) : (
                       <Checkbox
                         checked={task.status === "completed"}
                         onChange={() =>
@@ -552,111 +579,112 @@ const TaskList = () => {
                           },
                         }}
                       />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
+                    )}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          mb: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="body1"
+                          fontWeight={600}
+                          sx={{
+                            textDecoration:
+                              task.status === "completed"
+                                ? "line-through"
+                                : "none",
+                            color:
+                              task.status === "completed"
+                                ? "text.secondary"
+                                : "text.primary",
+                          }}
+                        >
+                          {task.name}
+                        </Typography>
+                        <Chip
+                          label={task.status}
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.7rem",
+                            backgroundColor: getStatusColor(task.status),
+                            color: "white",
+                            fontWeight: 500,
+                          }}
+                        />
+                        <Chip
+                          label={task.priority}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.7rem",
+                            borderColor: getPriorityColor(task.priority),
+                            color: getPriorityColor(task.priority),
+                            fontWeight: 500,
+                          }}
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <Box>
+                        {task.description && (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              mb: 1,
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {task.description}
+                          </Typography>
+                        )}
                         <Box
                           sx={{
                             display: "flex",
                             alignItems: "center",
                             gap: 2,
-                            mb: 1,
                           }}
                         >
-                          <Typography
-                            variant="body1"
-                            fontWeight={600}
-                            sx={{
-                              textDecoration:
-                                task.status === "completed"
-                                  ? "line-through"
-                                  : "none",
-                              color:
-                                task.status === "completed"
-                                  ? "text.secondary"
-                                  : "text.primary",
-                            }}
-                          >
-                            {task.name}
+                          <Typography variant="caption" color="text.secondary">
+                            <strong>Project:</strong>{" "}
+                            {getProjectName(task.projectId)}
                           </Typography>
-                          <Chip
-                            label={task.status}
-                            size="small"
-                            sx={{
-                              height: 20,
-                              fontSize: "0.7rem",
-                              backgroundColor: getStatusColor(task.status),
-                              color: "white",
-                              fontWeight: 500,
-                            }}
-                          />
-                          <Chip
-                            label={task.priority}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              height: 20,
-                              fontSize: "0.7rem",
-                              borderColor: getPriorityColor(task.priority),
-                              color: getPriorityColor(task.priority),
-                              fontWeight: 500,
-                            }}
-                          />
-                        </Box>
-                      }
-                      secondary={
-                        <Box>
-                          {task.description && (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                mb: 1,
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                              }}
-                            >
-                              {task.description}
-                            </Typography>
-                          )}
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                            }}
-                          >
+                          {task.category && (
                             <Typography
                               variant="caption"
                               color="text.secondary"
                             >
-                              <strong>Project:</strong>{" "}
-                              {getProjectName(task.projectId)}
+                              <strong>Category:</strong> {task.category}
                             </Typography>
-                            {task.category && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                <strong>Category:</strong> {task.category}
-                              </Typography>
-                            )}
-                            {task.createdAt && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                <strong>Created:</strong>{" "}
-                                {formatDate(task.createdAt)}
-                              </Typography>
-                            )}
-                          </Box>
+                          )}
+                          {task.createdAt && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              <strong>Created:</strong>{" "}
+                              {formatDate(task.createdAt)}
+                            </Typography>
+                          )}
                         </Box>
-                      }
-                    />
-                    <ListItemSecondaryAction>
+                      </Box>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    {submittingState.updating === task.id ? (
+                      <CircularProgress size={24} sx={{ mr: 1 }} />
+                    ) : (
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 1 }}
                       >
@@ -689,10 +717,9 @@ const TaskList = () => {
                           <MoreVert />
                         </IconButton>
                       </Box>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  {index < filteredAndSortedTasks.length - 1 && <Divider />}
-                </React.Fragment>
+                    )}
+                  </ListItemSecondaryAction>
+                </ListItem>
               ))}
             </List>
           </Paper>
@@ -706,18 +733,22 @@ const TaskList = () => {
           }}
         >
           <MenuItem
-            onClick={() => navigate(`/projects/${selectedTask?.projectId}`)}
+            onClick={() => navigate(`/project/${selectedTask?.projectId}`)}
+            sx={{ color: "#1976d2" }}
           >
-            <Visibility fontSize="small" sx={{ mr: 1 }} />
+            <Visibility fontSize="small" sx={{ mr: 1, color: "#1976d2" }} />
             View Project
           </MenuItem>
-          <MenuItem onClick={handleEditTask}>
-            <Edit fontSize="small" sx={{ mr: 1 }} />
-            Edit Task
+          <MenuItem onClick={handleEditTask} sx={{ color: "#f57c00" }}>
+            <Edit fontSize="small" sx={{ mr: 1, color: "#f57c00" }} />
+            Edit
           </MenuItem>
-          <MenuItem onClick={handleDeleteTask} sx={{ color: "error.main" }}>
-            <Delete fontSize="small" sx={{ mr: 1 }} />
-            Delete Task
+          <MenuItem
+            onClick={() => setOpenConfirmDialog(true)}
+            sx={{ color: "#d32f2f" }}
+          >
+            <Delete fontSize="small" sx={{ mr: 1, color: "#d32f2f" }} />
+            Delete
           </MenuItem>
         </Menu>
         <Dialog
@@ -726,6 +757,7 @@ const TaskList = () => {
           maxWidth="sm"
           fullWidth
         >
+          {submittingState.saving && <LinearProgress />}
           <DialogTitle>Edit Task</DialogTitle>
           <DialogContent>
             <TextField
@@ -736,6 +768,7 @@ const TaskList = () => {
                 setEditForm((prev) => ({ ...prev, name: e.target.value }))
               }
               sx={{ mb: 2, mt: 1 }}
+              disabled={submittingState.saving}
             />
             <TextField
               fullWidth
@@ -750,10 +783,11 @@ const TaskList = () => {
               multiline
               rows={3}
               sx={{ mb: 2 }}
+              disabled={submittingState.saving}
             />
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth disabled={submittingState.saving}>
                   <InputLabel>Status</InputLabel>
                   <Select
                     value={editForm.status}
@@ -773,7 +807,7 @@ const TaskList = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth disabled={submittingState.saving}>
                   <InputLabel>Priority</InputLabel>
                   <Select
                     value={editForm.priority}
@@ -794,13 +828,45 @@ const TaskList = () => {
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => setEditDialogOpen(false)}
+              disabled={submittingState.saving}
+            >
+              Cancel
+            </Button>
             <Button
               variant="contained"
               onClick={handleSaveEdit}
-              disabled={!editForm.name.trim()}
+              disabled={!editForm.name.trim() || submittingState.saving}
             >
-              Save Changes
+              {submittingState.saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={openConfirmDialog}
+          onClose={() => setOpenConfirmDialog(false)}
+        >
+          <DialogTitle>Delete Task</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this task?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => setOpenConfirmDialog(false)}
+              disabled={submittingState.deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDeleteTask}
+              disabled={submittingState.deleting}
+            >
+              {submittingState.deleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogActions>
         </Dialog>

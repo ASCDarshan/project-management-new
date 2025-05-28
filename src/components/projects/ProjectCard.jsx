@@ -15,6 +15,12 @@ import {
   AvatarGroup,
   Tooltip,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Fade,
 } from "@mui/material";
 import {
   MoreVert,
@@ -26,41 +32,47 @@ import {
   Group,
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
+import { stringToColor } from "../../helpers/stringToColor";
 
 const ProjectCard = ({ project }) => {
   const navigate = useNavigate();
   const { deleteProject } = useProject();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleMenuOpen = (event) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = () => {
+  const handleMenuClose = (event) => {
+    event.stopPropagation();
     setAnchorEl(null);
   };
 
-  const handleDelete = async (event) => {
-    event.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      try {
-        await deleteProject(project.id);
-      } catch (error) {
-        console.error("Error deleting project:", error);
-      }
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteProject(project.id);
+    } catch (error) {
+      console.error("Error deleting project:", error);
+    } finally {
+      setIsDeleting(false);
+      setOpenConfirmDialog(false);
     }
-    handleMenuClose();
   };
 
   const handleEdit = (event) => {
     event.stopPropagation();
-    navigate(`/projects/${project.id}/edit`);
-    handleMenuClose();
+    setAnchorEl(null);
+    navigate(`/project/${project.id}/edit`);
   };
 
-  const handleView = () => {
-    navigate(`/projects/${project.id}`);
+  const handleView = (event) => {
+    event.stopPropagation();
+    setAnchorEl(null);
+    navigate(`/project/${project.id}`);
   };
 
   const getStatusColor = (status) => {
@@ -296,32 +308,76 @@ const ProjectCard = ({ project }) => {
         )}
         {project.assignedTo && project.assignedTo.length > 0 && (
           <Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography
+              variant="body2"
+              fontWeight={500}
+              color="text.secondary"
+              sx={{ mb: 1.5 }}
+            >
               Team
             </Typography>
-            <AvatarGroup max={4} sx={{ justifyContent: "flex-start" }}>
-              {project.assignedTo.map((member, index) => (
-                <Tooltip
-                  key={index}
-                  title={member.name || member.email || "Team Member"}
+
+            {project.assignedTo.length === 1 ? (
+              <Tooltip
+                title={
+                  project.assignedTo[0].name || project.assignedTo[0].email
+                }
+                placement="top"
+                arrow
+                TransitionComponent={Fade}
+              >
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    bgcolor: stringToColor(
+                      project.assignedTo[0].name || project.assignedTo[0].email
+                    ),
+                    fontSize: "1rem",
+                    border: (theme) =>
+                      `2px solid ${theme.palette.background.paper}`,
+                  }}
+                  src={project.assignedTo[0].photoURL}
                 >
-                  <Avatar
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      bgcolor: "primary.main",
-                      fontSize: "0.875rem",
-                      border: "2px solid white",
-                    }}
-                    src={member.photoURL}
+                  {(project.assignedTo[0].name || project.assignedTo[0].email)
+                    .charAt(0)
+                    .toUpperCase()}
+                </Avatar>
+              </Tooltip>
+            ) : (
+              <AvatarGroup
+                max={4}
+                sx={{
+                  justifyContent: "flex-start",
+                  "& .MuiAvatar-root": {
+                    width: 36,
+                    height: 36,
+                    fontSize: "1rem",
+                    border: (theme) =>
+                      `2px solid ${theme.palette.background.paper}`,
+                  },
+                }}
+              >
+                {project.assignedTo.map((member) => (
+                  <Tooltip
+                    key={member.id || member.email}
+                    title={member.name || member.email}
+                    placement="top"
+                    arrow
+                    TransitionComponent={Fade}
                   >
-                    {(member.name || member.email || "TM")
-                      .charAt(0)
-                      .toUpperCase()}
-                  </Avatar>
-                </Tooltip>
-              ))}
-            </AvatarGroup>
+                    <Avatar
+                      sx={{
+                        bgcolor: stringToColor(member.name || member.email),
+                      }}
+                      src={member.photoURL}
+                    >
+                      {(member.name || member.email).charAt(0).toUpperCase()}
+                    </Avatar>
+                  </Tooltip>
+                ))}
+              </AvatarGroup>
+            )}
           </Box>
         )}
       </CardContent>
@@ -354,19 +410,93 @@ const ProjectCard = ({ project }) => {
           sx: { borderRadius: 2, minWidth: 150 },
         }}
       >
-        <MenuItem onClick={handleView}>
-          <Visibility fontSize="small" sx={{ mr: 1 }} />
+        <MenuItem onClick={handleView} sx={{ color: "#1976d2" }}>
+          <Visibility fontSize="small" sx={{ mr: 1, color: "#1976d2" }} />
           View
         </MenuItem>
-        <MenuItem onClick={handleEdit}>
-          <Edit fontSize="small" sx={{ mr: 1 }} />
+        <MenuItem onClick={handleEdit} sx={{ color: "#f57c00" }}>
+          <Edit fontSize="small" sx={{ mr: 1, color: "#f57c00" }} />
           Edit
         </MenuItem>
-        <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
-          <Delete fontSize="small" sx={{ mr: 1 }} />
+        <MenuItem
+          onClick={(event) => {
+            event.stopPropagation();
+            setOpenConfirmDialog(true);
+            handleMenuClose(event);
+          }}
+          sx={{ color: "#d32f2f" }}
+        >
+          <Delete fontSize="small" sx={{ mr: 1, color: "#d32f2f" }} />
           Delete
         </MenuItem>
       </Menu>
+      <Dialog
+        open={openConfirmDialog}
+        onClose={(event) => {
+          if (event) {
+            event.stopPropagation();
+          }
+          setOpenConfirmDialog(false);
+        }}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+        sx={{ "& .MuiPaper-root": { borderRadius: 3, overflow: "hidden" } }}
+        onBackdropClick={(event) => {
+          event.stopPropagation();
+        }}
+      >
+        {isDeleting && <LinearProgress color="error" />}
+        <DialogTitle id="alert-dialog-title" sx={{ fontWeight: 600 }}>
+          Confirm Deletion
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete the project "
+            <Typography component="span" fontWeight={600}>
+              {project.name}
+            </Typography>
+            "?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpenConfirmDialog(false);
+            }}
+            disabled={isDeleting}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 500,
+              color: "text.secondary",
+              "&:hover": {
+                backgroundColor: "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={(event) => {
+              event.stopPropagation();
+              handleDelete();
+            }}
+            autoFocus
+            variant="contained"
+            color="error"
+            disabled={isDeleting}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 500,
+              minWidth: 90,
+            }}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };
