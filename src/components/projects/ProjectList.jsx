@@ -43,6 +43,8 @@ const ProjectList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
+  console.log("----projects----->", projects);
+
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
       project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -132,7 +134,7 @@ const ProjectList = () => {
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => navigate("/projects/new")}
+            onClick={() => navigate("/create-project")}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -169,7 +171,7 @@ const ProjectList = () => {
             }}
           >
             <TextField
-              placeholder="Search projects..."
+              placeholder="Search Projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -304,7 +306,7 @@ const ProjectList = () => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => navigate("/projects/new")}
+                onClick={() => navigate("/create-project")}
                 sx={{
                   borderRadius: 2,
                   px: 4,
