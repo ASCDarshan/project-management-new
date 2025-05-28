@@ -1,6 +1,5 @@
-// src/components/projects/ProjectList.jsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -16,39 +15,40 @@ import {
   Menu,
   MenuItem,
   Fade,
-  Skeleton
-} from '@mui/material';
+  Skeleton,
+} from "@mui/material";
 import {
   Add,
   Search,
   FilterList,
   ViewModule,
   ViewList,
-  MoreVert
-} from '@mui/icons-material';
-import { useProject } from '../../contexts/ProjectContext';
-import ProjectCard from './ProjectCard';
+} from "@mui/icons-material";
+import ProjectCard from "./ProjectCard";
+import useProject from "../../hooks/useProject";
+
+const statusOptions = [
+  { value: "all", label: "All Projects", color: "default" },
+  { value: "planning", label: "Planning", color: "info" },
+  { value: "in-progress", label: "In Progress", color: "warning" },
+  { value: "completed", label: "Completed", color: "success" },
+  { value: "on-hold", label: "On Hold", color: "error" },
+];
 
 const ProjectList = () => {
   const navigate = useNavigate();
   const { projects, loading } = useProject();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [viewMode, setViewMode] = useState('grid');
   const [anchorEl, setAnchorEl] = useState(null);
+  const [viewMode, setViewMode] = useState("grid");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
 
-  const statusOptions = [
-    { value: 'all', label: 'All Projects', color: 'default' },
-    { value: 'planning', label: 'Planning', color: 'info' },
-    { value: 'in-progress', label: 'In Progress', color: 'warning' },
-    { value: 'completed', label: 'Completed', color: 'success' },
-    { value: 'on-hold', label: 'On Hold', color: 'error' }
-  ];
-
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || project.status === filterStatus;
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
+      project.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      filterStatus === "all" || project.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -61,21 +61,37 @@ const ProjectList = () => {
   };
 
   const getStatusCount = (status) => {
-    if (status === 'all') return projects.length;
-    return projects.filter(project => project.status === status).length;
+    if (status === "all") return projects.length;
+    return projects.filter((project) => project.status === status).length;
   };
 
   if (loading) {
     return (
       <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
+        >
           <Skeleton variant="text" width={200} height={40} />
-          <Skeleton variant="rectangular" width={140} height={40} sx={{ borderRadius: 2 }} />
+          <Skeleton
+            variant="rectangular"
+            width={140}
+            height={40}
+            sx={{ borderRadius: 2 }}
+          />
         </Box>
         <Grid container spacing={3}>
           {[1, 2, 3, 4, 5, 6].map((item) => (
             <Grid item xs={12} sm={6} lg={4} key={item}>
-              <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />
+              <Skeleton
+                variant="rectangular"
+                height={280}
+                sx={{ borderRadius: 2 }}
+              />
             </Grid>
           ))}
         </Grid>
@@ -86,8 +102,14 @@ const ProjectList = () => {
   return (
     <Fade in={true} timeout={600}>
       <Box>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
+        >
           <Box>
             <Typography
               variant="h4"
@@ -95,10 +117,10 @@ const ProjectList = () => {
               gutterBottom
               sx={{
                 fontWeight: 700,
-                background: 'linear-gradient(135deg, #8B7EC8, #6B5B95)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                background: "linear-gradient(135deg, #8B7EC8, #6B5B95)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
               }}
             >
               Projects
@@ -107,40 +129,45 @@ const ProjectList = () => {
               Manage and track your project portfolio
             </Typography>
           </Box>
-
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => navigate('/projects/new')}
+            onClick={() => navigate("/projects/new")}
             sx={{
               borderRadius: 2,
               px: 3,
               py: 1.5,
-              textTransform: 'none',
+              textTransform: "none",
               fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(139, 126, 200, 0.3)',
-              '&:hover': {
-                boxShadow: '0 6px 20px rgba(139, 126, 200, 0.4)',
-                transform: 'translateY(-2px)'
-              }
+              boxShadow: "0 4px 12px rgba(139, 126, 200, 0.3)",
+              "&:hover": {
+                boxShadow: "0 6px 20px rgba(139, 126, 200, 0.4)",
+                transform: "translateY(-2px)",
+              },
             }}
           >
             New Project
           </Button>
         </Box>
-
-        {/* Filters and Search */}
         <Paper
           elevation={0}
           sx={{
             p: 3,
             mb: 3,
             borderRadius: 3,
-            background: 'linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))',
-            border: '1px solid rgba(139, 126, 200, 0.1)'
+            background:
+              "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+            border: "1px solid rgba(139, 126, 200, 0.1)",
           }}
         >
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, alignItems: { md: 'center' } }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2,
+              alignItems: { md: "center" },
+            }}
+          >
             <TextField
               placeholder="Search projects..."
               value={searchTerm}
@@ -148,60 +175,60 @@ const ProjectList = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search sx={{ color: 'text.secondary' }} />
+                    <Search sx={{ color: "text.secondary" }} />
                   </InputAdornment>
                 ),
               }}
               sx={{
                 flex: 1,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
-                  borderRadius: 2
-                }
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "white",
+                  borderRadius: 2,
+                },
               }}
             />
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <IconButton
-                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                onClick={() =>
+                  setViewMode(viewMode === "grid" ? "list" : "grid")
+                }
                 sx={{
-                  backgroundColor: 'white',
-                  border: '1px solid rgba(139, 126, 200, 0.2)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(139, 126, 200, 0.1)'
-                  }
+                  backgroundColor: "white",
+                  border: "1px solid rgba(139, 126, 200, 0.2)",
+                  "&:hover": {
+                    backgroundColor: "rgba(139, 126, 200, 0.1)",
+                  },
                 }}
               >
-                {viewMode === 'grid' ? <ViewList /> : <ViewModule />}
+                {viewMode === "grid" ? <ViewList /> : <ViewModule />}
               </IconButton>
-
               <IconButton
                 onClick={handleMenuOpen}
                 sx={{
-                  backgroundColor: 'white',
-                  border: '1px solid rgba(139, 126, 200, 0.2)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(139, 126, 200, 0.1)'
-                  }
+                  backgroundColor: "white",
+                  border: "1px solid rgba(139, 126, 200, 0.2)",
+                  "&:hover": {
+                    backgroundColor: "rgba(139, 126, 200, 0.1)",
+                  },
                 }}
               >
                 <FilterList />
               </IconButton>
             </Box>
           </Box>
-
-          {/* Status Tabs */}
-          <Box sx={{ mt: 2, borderBottom: '1px solid rgba(139, 126, 200, 0.1)' }}>
+          <Box
+            sx={{ mt: 2, borderBottom: "1px solid rgba(139, 126, 200, 0.1)" }}
+          >
             <Tabs
               value={filterStatus}
               onChange={(e, newValue) => setFilterStatus(newValue)}
               sx={{
-                '& .MuiTab-root': {
-                  textTransform: 'none',
+                "& .MuiTab-root": {
+                  textTransform: "none",
                   fontWeight: 500,
-                  borderRadius: '8px 8px 0 0',
-                  mr: 1
-                }
+                  borderRadius: "8px 8px 0 0",
+                  mr: 1,
+                },
               }}
             >
               {statusOptions.map((option) => (
@@ -209,16 +236,16 @@ const ProjectList = () => {
                   key={option.value}
                   value={option.value}
                   label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       {option.label}
                       <Chip
                         size="small"
                         label={getStatusCount(option.value)}
                         sx={{
                           height: 20,
-                          fontSize: '0.75rem',
-                          backgroundColor: 'rgba(139, 126, 200, 0.1)',
-                          color: '#8B7EC8'
+                          fontSize: "0.75rem",
+                          backgroundColor: "rgba(139, 126, 200, 0.1)",
+                          color: "#8B7EC8",
                         }}
                       />
                     </Box>
@@ -228,49 +255,63 @@ const ProjectList = () => {
             </Tabs>
           </Box>
         </Paper>
-
-        {/* Projects Grid */}
         {filteredProjects.length === 0 ? (
           <Paper
             elevation={0}
             sx={{
               p: 8,
-              textAlign: 'center',
+              textAlign: "center",
               borderRadius: 3,
-              background: 'linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))',
-              border: '1px solid rgba(139, 126, 200, 0.1)'
+              background:
+                "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+              border: "1px solid rgba(139, 126, 200, 0.1)",
             }}
           >
             <Box
               sx={{
                 width: 100,
                 height: 100,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #8B7EC8, #B5A9D6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 24px',
-                opacity: 0.7
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #8B7EC8, #B5A9D6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 24px",
+                opacity: 0.7,
               }}
             >
-              <Add sx={{ fontSize: 40, color: 'white' }} />
+              <Add sx={{ fontSize: 40, color: "white" }} />
             </Box>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: 'text.primary' }}>
-              {searchTerm || filterStatus !== 'all' ? 'No projects found' : 'No projects yet'}
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{ fontWeight: 600, color: "text.primary" }}
+            >
+              {searchTerm || filterStatus !== "all"
+                ? "No projects found"
+                : "No projects yet"}
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-              {searchTerm || filterStatus !== 'all' ?
-                'Try adjusting your search or filter criteria.' :
-                'Create your first project to start organizing your work and tracking progress.'
-              }
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ mb: 3, maxWidth: 400, mx: "auto" }}
+            >
+              {searchTerm || filterStatus !== "all"
+                ? "Try adjusting your search or filter criteria."
+                : "Create your first project to start organizing your work and tracking progress."}
             </Typography>
-            {!searchTerm && filterStatus === 'all' && (
+            {!searchTerm && filterStatus === "all" && (
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => navigate('/projects/new')}
-                sx={{ borderRadius: 2, px: 4, py: 1.5, textTransform: 'none', fontWeight: 600 }}
+                onClick={() => navigate("/projects/new")}
+                sx={{
+                  borderRadius: 2,
+                  px: 4,
+                  py: 1.5,
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
               >
                 Create Your First Project
               </Button>
@@ -280,7 +321,7 @@ const ProjectList = () => {
           <Grid container spacing={3}>
             {filteredProjects.map((project, index) => (
               <Grid item xs={12} sm={6} lg={4} key={project.id}>
-                <Fade in={true} timeout={600 + (index * 100)}>
+                <Fade in={true} timeout={600 + index * 100}>
                   <div>
                     <ProjectCard project={project} />
                   </div>
@@ -289,25 +330,17 @@ const ProjectList = () => {
             ))}
           </Grid>
         )}
-
-        {/* Filter Menu */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
           PaperProps={{
-            sx: { borderRadius: 2, minWidth: 200 }
+            sx: { borderRadius: 2, minWidth: 200 },
           }}
         >
-          <MenuItem onClick={handleMenuClose}>
-            Sort by Name
-          </MenuItem>
-          <MenuItem onClick={handleMenuClose}>
-            Sort by Date
-          </MenuItem>
-          <MenuItem onClick={handleMenuClose}>
-            Sort by Progress
-          </MenuItem>
+          <MenuItem onClick={handleMenuClose}>Sort by Name</MenuItem>
+          <MenuItem onClick={handleMenuClose}>Sort by Date</MenuItem>
+          <MenuItem onClick={handleMenuClose}>Sort by Progress</MenuItem>
         </Menu>
       </Box>
     </Fade>

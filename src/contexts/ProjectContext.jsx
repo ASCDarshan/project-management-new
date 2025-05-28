@@ -1,17 +1,161 @@
-// src/contexts/ProjectContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { firebaseService } from '../services/firebase';
-import { useAuth } from './AuthContext';
+import React, { createContext, useState, useEffect } from "react";
+import { firebaseService } from "../services/firebase";
+import useAuth from "../hooks/useAuth";
+
+  const defaultCategories = [
+    {
+      id: "planning-analysis",
+      name: "Planning & Analysis",
+      color: "#8B7EC8",
+      description: "Project planning and requirements analysis",
+      subcategories: [
+        {
+          name: "Requirements Gathering",
+          tasks: [
+            "Stakeholder interviews",
+            "Business requirements documentation",
+            "Functional requirements specification",
+            "Non-functional requirements",
+            "User story creation",
+            "Acceptance criteria definition",
+          ],
+        },
+        {
+          name: "Project Planning",
+          tasks: [
+            "Project scope definition",
+            "Work breakdown structure",
+            "Timeline creation and milestones",
+            "Resource allocation planning",
+            "Risk assessment and mitigation",
+            "Budget estimation and approval",
+          ],
+        },
+      ],
+    },
+    {
+      id: "design-architecture",
+      name: "Design & Architecture",
+      color: "#B5A9D6",
+      description: "System design and user experience planning",
+      subcategories: [
+        {
+          name: "System Design",
+          tasks: [
+            "System architecture design",
+            "Database schema design",
+            "API design and documentation",
+            "Security architecture planning",
+            "Performance optimization strategy",
+            "Integration points mapping",
+          ],
+        },
+        {
+          name: "UI/UX Design",
+          tasks: [
+            "User experience research",
+            "Wireframe and mockup creation",
+            "Interactive prototype development",
+            "Design system creation",
+            "Usability testing and feedback",
+            "Responsive design planning",
+          ],
+        },
+      ],
+    },
+    {
+      id: "development",
+      name: "Development",
+      color: "#A8E6CF",
+      description: "Software development and implementation",
+      subcategories: [
+        {
+          name: "Frontend Development",
+          tasks: [
+            "Component development and testing",
+            "State management implementation",
+            "Responsive design implementation",
+            "Cross-browser compatibility testing",
+            "Performance optimization",
+            "Accessibility implementation",
+          ],
+        },
+        {
+          name: "Backend Development",
+          tasks: [
+            "API development and testing",
+            "Database implementation",
+            "Authentication and authorization",
+            "Data validation and sanitization",
+            "Error handling and logging",
+            "Third-party integrations",
+          ],
+        },
+      ],
+    },
+    {
+      id: "testing-qa",
+      name: "Testing & Quality Assurance",
+      color: "#FFD3A5",
+      description: "Quality assurance and testing processes",
+      subcategories: [
+        {
+          name: "Testing",
+          tasks: [
+            "Unit testing implementation",
+            "Integration testing",
+            "System and end-to-end testing",
+            "User acceptance testing",
+            "Performance and load testing",
+            "Security testing and validation",
+          ],
+        },
+        {
+          name: "Quality Assurance",
+          tasks: [
+            "Code review and standards",
+            "Documentation review",
+            "Automated testing setup",
+            "Bug tracking and resolution",
+            "Quality metrics monitoring",
+            "Release readiness assessment",
+          ],
+        },
+      ],
+    },
+    {
+      id: "deployment-maintenance",
+      name: "Deployment & Maintenance",
+      color: "#FFAAA5",
+      description: "Deployment, monitoring, and ongoing maintenance",
+      subcategories: [
+        {
+          name: "Deployment",
+          tasks: [
+            "Environment setup and configuration",
+            "CI/CD pipeline configuration",
+            "Production deployment and rollback",
+            "Monitoring and alerting setup",
+            "Backup and disaster recovery",
+            "Performance monitoring setup",
+          ],
+        },
+        {
+          name: "Maintenance",
+          tasks: [
+            "Regular system updates",
+            "Security patches and updates",
+            "Performance monitoring and optimization",
+            "User support and issue resolution",
+            "Documentation updates and maintenance",
+            "System health monitoring",
+          ],
+        },
+      ],
+    },
+  ];
 
 const ProjectContext = createContext();
-
-export const useProject = () => {
-  const context = useContext(ProjectContext);
-  if (!context) {
-    throw new Error('useProject must be used within a ProjectProvider');
-  }
-  return context;
-};
 
 export const ProjectProvider = ({ children }) => {
   const { currentUser } = useAuth();
@@ -22,167 +166,11 @@ export const ProjectProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Default categories with subcategories and tasks
-  const defaultCategories = [
-    {
-      id: 'planning-analysis',
-      name: 'Planning & Analysis',
-      color: '#8B7EC8',
-      description: 'Project planning and requirements analysis',
-      subcategories: [
-        {
-          name: 'Requirements Gathering',
-          tasks: [
-            'Stakeholder interviews',
-            'Business requirements documentation',
-            'Functional requirements specification',
-            'Non-functional requirements',
-            'User story creation',
-            'Acceptance criteria definition'
-          ]
-        },
-        {
-          name: 'Project Planning',
-          tasks: [
-            'Project scope definition',
-            'Work breakdown structure',
-            'Timeline creation and milestones',
-            'Resource allocation planning',
-            'Risk assessment and mitigation',
-            'Budget estimation and approval'
-          ]
-        }
-      ]
-    },
-    {
-      id: 'design-architecture',
-      name: 'Design & Architecture',
-      color: '#B5A9D6',
-      description: 'System design and user experience planning',
-      subcategories: [
-        {
-          name: 'System Design',
-          tasks: [
-            'System architecture design',
-            'Database schema design',
-            'API design and documentation',
-            'Security architecture planning',
-            'Performance optimization strategy',
-            'Integration points mapping'
-          ]
-        },
-        {
-          name: 'UI/UX Design',
-          tasks: [
-            'User experience research',
-            'Wireframe and mockup creation',
-            'Interactive prototype development',
-            'Design system creation',
-            'Usability testing and feedback',
-            'Responsive design planning'
-          ]
-        }
-      ]
-    },
-    {
-      id: 'development',
-      name: 'Development',
-      color: '#A8E6CF',
-      description: 'Software development and implementation',
-      subcategories: [
-        {
-          name: 'Frontend Development',
-          tasks: [
-            'Component development and testing',
-            'State management implementation',
-            'Responsive design implementation',
-            'Cross-browser compatibility testing',
-            'Performance optimization',
-            'Accessibility implementation'
-          ]
-        },
-        {
-          name: 'Backend Development',
-          tasks: [
-            'API development and testing',
-            'Database implementation',
-            'Authentication and authorization',
-            'Data validation and sanitization',
-            'Error handling and logging',
-            'Third-party integrations'
-          ]
-        }
-      ]
-    },
-    {
-      id: 'testing-qa',
-      name: 'Testing & Quality Assurance',
-      color: '#FFD3A5',
-      description: 'Quality assurance and testing processes',
-      subcategories: [
-        {
-          name: 'Testing',
-          tasks: [
-            'Unit testing implementation',
-            'Integration testing',
-            'System and end-to-end testing',
-            'User acceptance testing',
-            'Performance and load testing',
-            'Security testing and validation'
-          ]
-        },
-        {
-          name: 'Quality Assurance',
-          tasks: [
-            'Code review and standards',
-            'Documentation review',
-            'Automated testing setup',
-            'Bug tracking and resolution',
-            'Quality metrics monitoring',
-            'Release readiness assessment'
-          ]
-        }
-      ]
-    },
-    {
-      id: 'deployment-maintenance',
-      name: 'Deployment & Maintenance',
-      color: '#FFAAA5',
-      description: 'Deployment, monitoring, and ongoing maintenance',
-      subcategories: [
-        {
-          name: 'Deployment',
-          tasks: [
-            'Environment setup and configuration',
-            'CI/CD pipeline configuration',
-            'Production deployment and rollback',
-            'Monitoring and alerting setup',
-            'Backup and disaster recovery',
-            'Performance monitoring setup'
-          ]
-        },
-        {
-          name: 'Maintenance',
-          tasks: [
-            'Regular system updates',
-            'Security patches and updates',
-            'Performance monitoring and optimization',
-            'User support and issue resolution',
-            'Documentation updates and maintenance',
-            'System health monitoring'
-          ]
-        }
-      ]
-    }
-  ];
-
-  // Initialize default categories
   useEffect(() => {
     const initializeCategories = async () => {
       try {
         const existingCategories = await firebaseService.getCategories();
         if (existingCategories.length === 0) {
-          // Create default categories if none exist
           for (const category of defaultCategories) {
             await firebaseService.createCategory(category);
           }
@@ -191,7 +179,7 @@ export const ProjectProvider = ({ children }) => {
           setCategories(existingCategories);
         }
       } catch (error) {
-        console.error('Error initializing categories:', error);
+        console.error("Error initializing categories:", error);
         setCategories(defaultCategories);
       }
     };
@@ -199,7 +187,6 @@ export const ProjectProvider = ({ children }) => {
     initializeCategories();
   }, []);
 
-  // Load data when user is authenticated
   useEffect(() => {
     if (currentUser) {
       loadProjects();
@@ -215,8 +202,8 @@ export const ProjectProvider = ({ children }) => {
       const projectsData = await firebaseService.getProjects();
       setProjects(projectsData);
     } catch (error) {
-      setError('Failed to load projects');
-      console.error('Error loading projects:', error);
+      setError("Failed to load projects");
+      console.error("Error loading projects:", error);
     } finally {
       setLoading(false);
     }
@@ -227,7 +214,7 @@ export const ProjectProvider = ({ children }) => {
       const tasksData = await firebaseService.getTasks();
       setTasks(tasksData);
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      console.error("Error loading tasks:", error);
     }
   };
 
@@ -236,7 +223,7 @@ export const ProjectProvider = ({ children }) => {
       const employeesData = await firebaseService.getEmployees();
       setEmployees(employeesData);
     } catch (error) {
-      console.error('Error loading employees:', error);
+      console.error("Error loading employees:", error);
     }
   };
 
@@ -247,11 +234,10 @@ export const ProjectProvider = ({ children }) => {
         setCategories(categoriesData);
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error("Error loading categories:", error);
     }
   };
 
-  // Project functions
   const createProject = async (projectData) => {
     try {
       setLoading(true);
@@ -260,13 +246,13 @@ export const ProjectProvider = ({ children }) => {
         createdBy: currentUser.uid,
         createdByName: currentUser.displayName,
         createdByEmail: currentUser.email,
-        status: projectData.status || 'planning',
-        priority: projectData.priority || 'medium'
+        status: projectData.status || "planning",
+        priority: projectData.priority || "medium",
       });
       await loadProjects();
       return projectId;
     } catch (error) {
-      setError('Failed to create project');
+      setError("Failed to create project");
       throw error;
     } finally {
       setLoading(false);
@@ -278,7 +264,7 @@ export const ProjectProvider = ({ children }) => {
       await firebaseService.updateProject(projectId, updateData);
       await loadProjects();
     } catch (error) {
-      setError('Failed to update project');
+      setError("Failed to update project");
       throw error;
     }
   };
@@ -288,25 +274,24 @@ export const ProjectProvider = ({ children }) => {
       await firebaseService.deleteProject(projectId);
       await loadProjects();
     } catch (error) {
-      setError('Failed to delete project');
+      setError("Failed to delete project");
       throw error;
     }
   };
 
-  // Task functions
   const createTask = async (taskData) => {
     try {
       const taskId = await firebaseService.createTask({
         ...taskData,
         createdBy: currentUser.uid,
         createdByName: currentUser.displayName,
-        status: taskData.status || 'pending',
-        priority: taskData.priority || 'medium'
+        status: taskData.status || "pending",
+        priority: taskData.priority || "medium",
       });
       await loadTasks();
       return taskId;
     } catch (error) {
-      setError('Failed to create task');
+      setError("Failed to create task");
       throw error;
     }
   };
@@ -316,7 +301,7 @@ export const ProjectProvider = ({ children }) => {
       await firebaseService.updateTask(taskId, updateData);
       await loadTasks();
     } catch (error) {
-      setError('Failed to update task');
+      setError("Failed to update task");
       throw error;
     }
   };
@@ -326,23 +311,22 @@ export const ProjectProvider = ({ children }) => {
       await firebaseService.deleteTask(taskId);
       await loadTasks();
     } catch (error) {
-      setError('Failed to delete task');
+      setError("Failed to delete task");
       throw error;
     }
   };
 
-  // Employee functions
   const createEmployee = async (employeeData) => {
     try {
       const employeeId = await firebaseService.createEmployee({
         ...employeeData,
         createdBy: currentUser.uid,
-        createdAt: new Date()
+        createdAt: new Date(),
       });
       await loadEmployees();
       return employeeId;
     } catch (error) {
-      setError('Failed to create employee');
+      setError("Failed to create employee");
       throw error;
     }
   };
@@ -352,7 +336,7 @@ export const ProjectProvider = ({ children }) => {
       await firebaseService.updateEmployee(employeeId, updateData);
       await loadEmployees();
     } catch (error) {
-      setError('Failed to update employee');
+      setError("Failed to update employee");
       throw error;
     }
   };
@@ -362,103 +346,89 @@ export const ProjectProvider = ({ children }) => {
       await firebaseService.deleteEmployee(employeeId);
       await loadEmployees();
     } catch (error) {
-      setError('Failed to delete employee');
+      setError("Failed to delete employee");
       throw error;
     }
   };
 
-  // Category functions
   const createCategory = async (categoryData) => {
     try {
       const categoryId = await firebaseService.createCategory({
         ...categoryData,
-        createdBy: currentUser.uid
+        createdBy: currentUser.uid,
       });
       await loadCategories();
       return categoryId;
     } catch (error) {
-      setError('Failed to create category');
+      setError("Failed to create category");
       throw error;
     }
   };
 
-  // Utility functions
   const getProjectById = (projectId) => {
-    return projects.find(project => project.id === projectId);
+    return projects.find((project) => project.id === projectId);
   };
 
   const getTasksByProject = (projectId) => {
-    return tasks.filter(task => task.projectId === projectId);
+    return tasks.filter((task) => task.projectId === projectId);
   };
 
   const getTasksByEmployee = (employeeId) => {
-    return tasks.filter(task => task.assignedTo === employeeId);
+    return tasks.filter((task) => task.assignedTo === employeeId);
   };
 
   const getProjectsByEmployee = (employeeId) => {
-    return projects.filter(project => 
-      project.assignedTo?.some(member => member.id === employeeId)
+    return projects.filter((project) =>
+      project.assignedTo?.some((member) => member.id === employeeId)
     );
   };
 
   const getTasksByStatus = (status) => {
-    return tasks.filter(task => task.status === status);
+    return tasks.filter((task) => task.status === status);
   };
 
   const getProjectProgress = (projectId) => {
     const projectTasks = getTasksByProject(projectId);
     if (projectTasks.length === 0) return 0;
-    
-    const completedTasks = projectTasks.filter(task => task.status === 'completed');
+    const completedTasks = projectTasks.filter(
+      (task) => task.status === "completed"
+    );
     return Math.round((completedTasks.length / projectTasks.length) * 100);
   };
 
   const value = {
-    // State
     projects,
     tasks,
     categories,
     employees,
     loading,
     error,
-    
-    // Project functions
     createProject,
     updateProject,
     deleteProject,
     getProjectById,
     getProjectProgress,
-    
-    // Task functions
     createTask,
     updateTask,
     deleteTask,
     getTasksByProject,
     getTasksByEmployee,
     getTasksByStatus,
-    
-    // Employee functions
     createEmployee,
     updateEmployee,
     deleteEmployee,
     getProjectsByEmployee,
-    
-    // Category functions
     createCategory,
-    
-    // Utility functions
     loadProjects,
     loadTasks,
     loadEmployees,
     loadCategories,
-    
-    // Default data
-    defaultCategories
+    defaultCategories,
   };
 
   return (
-    <ProjectContext.Provider value={value}>
-      {children}
-    </ProjectContext.Provider>
+    <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>
   );
 };
+
+export default ProjectContext;

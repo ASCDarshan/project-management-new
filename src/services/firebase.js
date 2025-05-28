@@ -1,56 +1,53 @@
-// src/services/firebase.js
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
   orderBy,
   onSnapshot,
   serverTimestamp,
-  getDoc
-} from 'firebase/firestore';
+  getDoc,
+} from "firebase/firestore";
 
-// Your Firebase configuration
-// Replace these values with your actual Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyB6m-3KTQFyM50YdqixYINTyeay5p4anOE",
-  authDomain: "learntospeak-b7404.firebaseapp.com",
-  projectId: "learntospeak-b7404",
-  storageBucket: "learntospeak-b7404.firebasestorage.app",
-  messagingSenderId: "620797833123",
-  appId: "1:620797833123:web:5dbbd96b801d6bf104b416",
-  measurementId: "G-DL02BWVDMQ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Auth
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Configure Google Auth Provider
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: "select_account",
 });
 
-// Initialize Firestore
 export const db = getFirestore(app);
 
-// Auth functions
 export const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
   } catch (error) {
-    console.error('Error signing in with Google:', error);
+    console.error("Error signing in with Google:", error);
     throw error;
   }
 };
@@ -59,24 +56,22 @@ export const logOut = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error('Error signing out:', error);
+    console.error("Error signing out:", error);
     throw error;
   }
 };
 
-// Firestore functions
 export const firebaseService = {
-  // Projects
   async createProject(projectData) {
     try {
-      const docRef = await addDoc(collection(db, 'projects'), {
+      const docRef = await addDoc(collection(db, "projects"), {
         ...projectData,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error creating project:', error);
+      console.error("Error creating project:", error);
       throw error;
     }
   },
@@ -86,64 +81,64 @@ export const firebaseService = {
       let q;
       if (userId) {
         q = query(
-          collection(db, 'projects'),
-          where('assignedTo', 'array-contains', userId),
-          orderBy('createdAt', 'desc')
+          collection(db, "projects"),
+          where("assignedTo", "array-contains", userId),
+          orderBy("createdAt", "desc")
         );
       } else {
-        q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
+        q = query(collection(db, "projects"), orderBy("createdAt", "desc"));
       }
-      
+
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      return querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         createdAt: doc.data().createdAt,
-        updatedAt: doc.data().updatedAt
+        updatedAt: doc.data().updatedAt,
       }));
     } catch (error) {
-      console.error('Error getting projects:', error);
+      console.error("Error getting projects:", error);
       throw error;
     }
   },
 
   async getProject(projectId) {
     try {
-      const docRef = doc(db, 'projects', projectId);
+      const docRef = doc(db, "projects", projectId);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         return {
           id: docSnap.id,
-          ...docSnap.data()
+          ...docSnap.data(),
         };
       } else {
-        throw new Error('Project not found');
+        throw new Error("Project not found");
       }
     } catch (error) {
-      console.error('Error getting project:', error);
+      console.error("Error getting project:", error);
       throw error;
     }
   },
 
   async updateProject(projectId, updateData) {
     try {
-      const projectRef = doc(db, 'projects', projectId);
+      const projectRef = doc(db, "projects", projectId);
       await updateDoc(projectRef, {
         ...updateData,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error('Error updating project:', error);
+      console.error("Error updating project:", error);
       throw error;
     }
   },
 
   async deleteProject(projectId) {
     try {
-      await deleteDoc(doc(db, 'projects', projectId));
+      await deleteDoc(doc(db, "projects", projectId));
     } catch (error) {
-      console.error('Error deleting project:', error);
+      console.error("Error deleting project:", error);
       throw error;
     }
   },
@@ -151,14 +146,14 @@ export const firebaseService = {
   // Tasks
   async createTask(taskData) {
     try {
-      const docRef = await addDoc(collection(db, 'tasks'), {
+      const docRef = await addDoc(collection(db, "tasks"), {
         ...taskData,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error creating task:', error);
+      console.error("Error creating task:", error);
       throw error;
     }
   },
@@ -168,62 +163,62 @@ export const firebaseService = {
       let q;
       if (projectId) {
         q = query(
-          collection(db, 'tasks'),
-          where('projectId', '==', projectId),
-          orderBy('createdAt', 'desc')
+          collection(db, "tasks"),
+          where("projectId", "==", projectId),
+          orderBy("createdAt", "desc")
         );
       } else {
-        q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
+        q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
       }
-      
+
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      return querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
     } catch (error) {
-      console.error('Error getting tasks:', error);
+      console.error("Error getting tasks:", error);
       throw error;
     }
   },
 
   async getTask(taskId) {
     try {
-      const docRef = doc(db, 'tasks', taskId);
+      const docRef = doc(db, "tasks", taskId);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         return {
           id: docSnap.id,
-          ...docSnap.data()
+          ...docSnap.data(),
         };
       } else {
-        throw new Error('Task not found');
+        throw new Error("Task not found");
       }
     } catch (error) {
-      console.error('Error getting task:', error);
+      console.error("Error getting task:", error);
       throw error;
     }
   },
 
   async updateTask(taskId, updateData) {
     try {
-      const taskRef = doc(db, 'tasks', taskId);
+      const taskRef = doc(db, "tasks", taskId);
       await updateDoc(taskRef, {
         ...updateData,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error("Error updating task:", error);
       throw error;
     }
   },
 
   async deleteTask(taskId) {
     try {
-      await deleteDoc(doc(db, 'tasks', taskId));
+      await deleteDoc(doc(db, "tasks", taskId));
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error("Error deleting task:", error);
       throw error;
     }
   },
@@ -231,49 +226,49 @@ export const firebaseService = {
   // Categories
   async createCategory(categoryData) {
     try {
-      const docRef = await addDoc(collection(db, 'categories'), {
+      const docRef = await addDoc(collection(db, "categories"), {
         ...categoryData,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error creating category:', error);
+      console.error("Error creating category:", error);
       throw error;
     }
   },
 
   async getCategories() {
     try {
-      const q = query(collection(db, 'categories'), orderBy('name'));
+      const q = query(collection(db, "categories"), orderBy("name"));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      return querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
     } catch (error) {
-      console.error('Error getting categories:', error);
+      console.error("Error getting categories:", error);
       throw error;
     }
   },
 
   async updateCategory(categoryId, updateData) {
     try {
-      const categoryRef = doc(db, 'categories', categoryId);
+      const categoryRef = doc(db, "categories", categoryId);
       await updateDoc(categoryRef, {
         ...updateData,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error("Error updating category:", error);
       throw error;
     }
   },
 
   async deleteCategory(categoryId) {
     try {
-      await deleteDoc(doc(db, 'categories', categoryId));
+      await deleteDoc(doc(db, "categories", categoryId));
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error("Error deleting category:", error);
       throw error;
     }
   },
@@ -281,68 +276,68 @@ export const firebaseService = {
   // Employees
   async createEmployee(employeeData) {
     try {
-      const docRef = await addDoc(collection(db, 'employees'), {
+      const docRef = await addDoc(collection(db, "employees"), {
         ...employeeData,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       });
       return docRef.id;
     } catch (error) {
-      console.error('Error creating employee:', error);
+      console.error("Error creating employee:", error);
       throw error;
     }
   },
 
   async getEmployees() {
     try {
-      const q = query(collection(db, 'employees'), orderBy('name'));
+      const q = query(collection(db, "employees"), orderBy("name"));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      return querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
     } catch (error) {
-      console.error('Error getting employees:', error);
+      console.error("Error getting employees:", error);
       throw error;
     }
   },
 
   async getEmployee(employeeId) {
     try {
-      const docRef = doc(db, 'employees', employeeId);
+      const docRef = doc(db, "employees", employeeId);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         return {
           id: docSnap.id,
-          ...docSnap.data()
+          ...docSnap.data(),
         };
       } else {
-        throw new Error('Employee not found');
+        throw new Error("Employee not found");
       }
     } catch (error) {
-      console.error('Error getting employee:', error);
+      console.error("Error getting employee:", error);
       throw error;
     }
   },
 
   async updateEmployee(employeeId, updateData) {
     try {
-      const employeeRef = doc(db, 'employees', employeeId);
+      const employeeRef = doc(db, "employees", employeeId);
       await updateDoc(employeeRef, {
         ...updateData,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error('Error updating employee:', error);
+      console.error("Error updating employee:", error);
       throw error;
     }
   },
 
   async deleteEmployee(employeeId) {
     try {
-      await deleteDoc(doc(db, 'employees', employeeId));
+      await deleteDoc(doc(db, "employees", employeeId));
     } catch (error) {
-      console.error('Error deleting employee:', error);
+      console.error("Error deleting employee:", error);
       throw error;
     }
   },
@@ -352,80 +347,96 @@ export const firebaseService = {
     let q;
     if (userId) {
       q = query(
-        collection(db, 'projects'),
-        where('assignedTo', 'array-contains', userId),
-        orderBy('createdAt', 'desc')
+        collection(db, "projects"),
+        where("assignedTo", "array-contains", userId),
+        orderBy("createdAt", "desc")
       );
     } else {
-      q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
+      q = query(collection(db, "projects"), orderBy("createdAt", "desc"));
     }
 
-    return onSnapshot(q, (querySnapshot) => {
-      const projects = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(projects);
-    }, (error) => {
-      console.error('Error in projects subscription:', error);
-    });
+    return onSnapshot(
+      q,
+      (querySnapshot) => {
+        const projects = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        callback(projects);
+      },
+      (error) => {
+        console.error("Error in projects subscription:", error);
+      }
+    );
   },
 
   subscribeToTasks(callback, projectId = null) {
     let q;
     if (projectId) {
       q = query(
-        collection(db, 'tasks'),
-        where('projectId', '==', projectId),
-        orderBy('createdAt', 'desc')
+        collection(db, "tasks"),
+        where("projectId", "==", projectId),
+        orderBy("createdAt", "desc")
       );
     } else {
-      q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
+      q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
     }
 
-    return onSnapshot(q, (querySnapshot) => {
-      const tasks = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(tasks);
-    }, (error) => {
-      console.error('Error in tasks subscription:', error);
-    });
+    return onSnapshot(
+      q,
+      (querySnapshot) => {
+        const tasks = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        callback(tasks);
+      },
+      (error) => {
+        console.error("Error in tasks subscription:", error);
+      }
+    );
   },
 
   subscribeToProject(projectId, callback) {
-    const projectRef = doc(db, 'projects', projectId);
-    
-    return onSnapshot(projectRef, (doc) => {
-      if (doc.exists()) {
-        callback({
-          id: doc.id,
-          ...doc.data()
-        });
-      } else {
-        callback(null);
+    const projectRef = doc(db, "projects", projectId);
+
+    return onSnapshot(
+      projectRef,
+      (doc) => {
+        if (doc.exists()) {
+          callback({
+            id: doc.id,
+            ...doc.data(),
+          });
+        } else {
+          callback(null);
+        }
+      },
+      (error) => {
+        console.error("Error in project subscription:", error);
       }
-    }, (error) => {
-      console.error('Error in project subscription:', error);
-    });
+    );
   },
 
   subscribeToTask(taskId, callback) {
-    const taskRef = doc(db, 'tasks', taskId);
-    
-    return onSnapshot(taskRef, (doc) => {
-      if (doc.exists()) {
-        callback({
-          id: doc.id,
-          ...doc.data()
-        });
-      } else {
-        callback(null);
+    const taskRef = doc(db, "tasks", taskId);
+
+    return onSnapshot(
+      taskRef,
+      (doc) => {
+        if (doc.exists()) {
+          callback({
+            id: doc.id,
+            ...doc.data(),
+          });
+        } else {
+          callback(null);
+        }
+      },
+      (error) => {
+        console.error("Error in task subscription:", error);
       }
-    }, (error) => {
-      console.error('Error in task subscription:', error);
-    });
+    );
   },
 
   // Analytics and reporting
@@ -433,12 +444,21 @@ export const firebaseService = {
     try {
       const tasks = await this.getTasks(projectId);
       const totalTasks = tasks.length;
-      const completedTasks = tasks.filter(task => task.status === 'completed').length;
-      const inProgressTasks = tasks.filter(task => task.status === 'in-progress').length;
-      const pendingTasks = tasks.filter(task => task.status === 'pending').length;
-      const blockedTasks = tasks.filter(task => task.status === 'blocked').length;
+      const completedTasks = tasks.filter(
+        (task) => task.status === "completed"
+      ).length;
+      const inProgressTasks = tasks.filter(
+        (task) => task.status === "in-progress"
+      ).length;
+      const pendingTasks = tasks.filter(
+        (task) => task.status === "pending"
+      ).length;
+      const blockedTasks = tasks.filter(
+        (task) => task.status === "blocked"
+      ).length;
 
-      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      const progress =
+        totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       return {
         totalTasks,
@@ -446,10 +466,10 @@ export const firebaseService = {
         inProgressTasks,
         pendingTasks,
         blockedTasks,
-        progress
+        progress,
       };
     } catch (error) {
-      console.error('Error getting project stats:', error);
+      console.error("Error getting project stats:", error);
       throw error;
     }
   },
@@ -458,24 +478,29 @@ export const firebaseService = {
     try {
       const userProjects = await this.getProjects(userId);
       const allTasks = await this.getTasks();
-      const userTasks = allTasks.filter(task => task.assignedTo === userId);
+      const userTasks = allTasks.filter((task) => task.assignedTo === userId);
 
       return {
         totalProjects: userProjects.length,
         totalTasks: userTasks.length,
-        completedTasks: userTasks.filter(task => task.status === 'completed').length,
-        inProgressTasks: userTasks.filter(task => task.status === 'in-progress').length,
-        overdueTasks: userTasks.filter(task => {
-          if (!task.dueDate || task.status === 'completed') return false;
-          const dueDate = task.dueDate.toDate ? task.dueDate.toDate() : new Date(task.dueDate);
+        completedTasks: userTasks.filter((task) => task.status === "completed")
+          .length,
+        inProgressTasks: userTasks.filter(
+          (task) => task.status === "in-progress"
+        ).length,
+        overdueTasks: userTasks.filter((task) => {
+          if (!task.dueDate || task.status === "completed") return false;
+          const dueDate = task.dueDate.toDate
+            ? task.dueDate.toDate()
+            : new Date(task.dueDate);
           return dueDate < new Date();
-        }).length
+        }).length,
       };
     } catch (error) {
-      console.error('Error getting user stats:', error);
+      console.error("Error getting user stats:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default app;

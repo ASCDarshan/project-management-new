@@ -1,6 +1,5 @@
-// src/components/tasks/TaskList.jsx
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -35,89 +34,96 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
-} from '@mui/material';
+  DialogActions,
+} from "@mui/material";
 import {
   Search,
-  FilterList,
   Add,
   MoreVert,
   Assignment,
   CheckCircle,
-  Schedule,
-  Flag,
   Edit,
   Delete,
   Visibility,
   PlayArrow,
-  Pause,
-  Stop
-} from '@mui/icons-material';
-import { useProject } from '../../contexts/ProjectContext';
+} from "@mui/icons-material";
+import useProject from "../../hooks/useProject";
+
+const statusOptions = [
+  { value: "all", label: "All Tasks", color: "default" },
+  { value: "pending", label: "Pending", color: "#A5C9FF" },
+  { value: "in-progress", label: "In Progress", color: "#FFD3A5" },
+  { value: "completed", label: "Completed", color: "#A8E6CF" },
+  { value: "blocked", label: "Blocked", color: "#FFAAA5" },
+];
+
+const priorityOptions = [
+  { value: "all", label: "All Priorities", color: "default" },
+  { value: "low", label: "Low", color: "#A8E6CF" },
+  { value: "medium", label: "Medium", color: "#FFD3A5" },
+  { value: "high", label: "High", color: "#FFAAA5" },
+];
 
 const TaskList = () => {
   const navigate = useNavigate();
   const { tasks, projects, updateTask, deleteTask, loading } = useProject();
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterPriority, setFilterPriority] = useState('all');
-  const [filterProject, setFilterProject] = useState('all');
-  const [sortBy, setSortBy] = useState('recent');
-  const [viewMode, setViewMode] = useState('list');
-  const [tabValue, setTabValue] = useState(0);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("recent");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterProject, setFilterProject] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: '',
-    description: '',
-    status: '',
-    priority: ''
+    name: "",
+    description: "",
+    status: "",
+    priority: "",
   });
 
-  const statusOptions = [
-    { value: 'all', label: 'All Tasks', color: 'default' },
-    { value: 'pending', label: 'Pending', color: '#A5C9FF' },
-    { value: 'in-progress', label: 'In Progress', color: '#FFD3A5' },
-    { value: 'completed', label: 'Completed', color: '#A8E6CF' },
-    { value: 'blocked', label: 'Blocked', color: '#FFAAA5' }
-  ];
-
-  const priorityOptions = [
-    { value: 'all', label: 'All Priorities', color: 'default' },
-    { value: 'low', label: 'Low', color: '#A8E6CF' },
-    { value: 'medium', label: 'Medium', color: '#FFD3A5' },
-    { value: 'high', label: 'High', color: '#FFAAA5' }
-  ];
-
   const filteredAndSortedTasks = useMemo(() => {
-    let filtered = tasks.filter(task => {
-      const matchesSearch = task.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           task.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
-      const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
-      const matchesProject = filterProject === 'all' || task.projectId === filterProject;
-      
-      return matchesSearch && matchesStatus && matchesPriority && matchesProject;
+    let filtered = tasks.filter((task) => {
+      const matchesSearch =
+        task.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        filterStatus === "all" || task.status === filterStatus;
+      const matchesPriority =
+        filterPriority === "all" || task.priority === filterPriority;
+      const matchesProject =
+        filterProject === "all" || task.projectId === filterProject;
+
+      return (
+        matchesSearch && matchesStatus && matchesPriority && matchesProject
+      );
     });
 
     // Sort tasks
     switch (sortBy) {
-      case 'name':
-        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      case "name":
+        filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
         break;
-      case 'priority':
+      case "priority": {
         const priorityOrder = { high: 3, medium: 2, low: 1 };
-        filtered.sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0));
+        filtered.sort(
+          (a, b) =>
+            (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0)
+        );
         break;
-      case 'status':
-        filtered.sort((a, b) => (a.status || '').localeCompare(b.status || ''));
+      }
+      case "status":
+        filtered.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
         break;
       default: // recent
         filtered.sort((a, b) => {
-          const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-          const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+          const dateA = a.createdAt?.toDate
+            ? a.createdAt.toDate()
+            : new Date(a.createdAt || 0);
+          const dateB = b.createdAt?.toDate
+            ? b.createdAt.toDate()
+            : new Date(b.createdAt || 0);
           return dateB - dateA;
         });
     }
@@ -126,15 +132,17 @@ const TaskList = () => {
   }, [tasks, searchTerm, filterStatus, filterPriority, filterProject, sortBy]);
 
   const getTasksByStatus = (status) => {
-    return tasks.filter(task => task.status === status).length;
+    return tasks.filter((task) => task.status === status).length;
   };
 
   const getStatusColor = (status) => {
-    return statusOptions.find(s => s.value === status)?.color || '#E6E6FA';
+    return statusOptions.find((s) => s.value === status)?.color || "#E6E6FA";
   };
 
   const getPriorityColor = (priority) => {
-    return priorityOptions.find(p => p.value === priority)?.color || '#E6E6FA';
+    return (
+      priorityOptions.find((p) => p.value === priority)?.color || "#E6E6FA"
+    );
   };
 
   const handleMenuOpen = (event, task) => {
@@ -151,10 +159,10 @@ const TaskList = () => {
   const handleEditTask = () => {
     if (selectedTask) {
       setEditForm({
-        name: selectedTask.name || '',
-        description: selectedTask.description || '',
-        status: selectedTask.status || 'pending',
-        priority: selectedTask.priority || 'medium'
+        name: selectedTask.name || "",
+        description: selectedTask.description || "",
+        status: selectedTask.status || "pending",
+        priority: selectedTask.priority || "medium",
       });
       setEditDialogOpen(true);
     }
@@ -162,11 +170,14 @@ const TaskList = () => {
   };
 
   const handleDeleteTask = async () => {
-    if (selectedTask && window.confirm('Are you sure you want to delete this task?')) {
+    if (
+      selectedTask &&
+      window.confirm("Are you sure you want to delete this task?")
+    ) {
       try {
         await deleteTask(selectedTask.id);
       } catch (error) {
-        console.error('Error deleting task:', error);
+        console.error("Error deleting task:", error);
       }
     }
     handleMenuClose();
@@ -176,7 +187,7 @@ const TaskList = () => {
     try {
       await updateTask(taskId, { status: newStatus });
     } catch (error) {
-      console.error('Error updating task status:', error);
+      console.error("Error updating task status:", error);
     }
   };
 
@@ -187,22 +198,22 @@ const TaskList = () => {
         setEditDialogOpen(false);
         setSelectedTask(null);
       } catch (error) {
-        console.error('Error updating task:', error);
+        console.error("Error updating task:", error);
       }
     }
   };
 
   const getProjectName = (projectId) => {
-    const project = projects.find(p => p.id === projectId);
-    return project?.name || 'Unknown Project';
+    const project = projects.find((p) => p.id === projectId);
+    return project?.name || "Unknown Project";
   };
 
   const formatDate = (date) => {
-    if (!date) return '';
+    if (!date) return "";
     const dateObj = date.toDate ? date.toDate() : new Date(date);
-    return dateObj.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
+    return dateObj.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -214,7 +225,12 @@ const TaskList = () => {
           <Skeleton variant="rectangular" height={60} />
         </Paper>
         {[1, 2, 3, 4, 5].map((item) => (
-          <Skeleton key={item} variant="rectangular" height={80} sx={{ mb: 2, borderRadius: 2 }} />
+          <Skeleton
+            key={item}
+            variant="rectangular"
+            height={80}
+            sx={{ mb: 2, borderRadius: 2 }}
+          />
         ))}
       </Box>
     );
@@ -223,8 +239,14 @@ const TaskList = () => {
   return (
     <Fade in={true} timeout={600}>
       <Box>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 4,
+          }}
+        >
           <Box>
             <Typography
               variant="h4"
@@ -232,10 +254,10 @@ const TaskList = () => {
               gutterBottom
               sx={{
                 fontWeight: 700,
-                background: 'linear-gradient(135deg, #8B7EC8, #6B5B95)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                background: "linear-gradient(135deg, #8B7EC8, #6B5B95)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
               }}
             >
               Tasks
@@ -244,35 +266,32 @@ const TaskList = () => {
               Manage and track all your tasks across projects
             </Typography>
           </Box>
-
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => navigate('/projects/new')}
+            onClick={() => navigate("/projects/new")}
             sx={{
               borderRadius: 2,
               px: 3,
               py: 1.5,
-              textTransform: 'none',
-              fontWeight: 600
+              textTransform: "none",
+              fontWeight: 600,
             }}
           >
             Create Project
           </Button>
         </Box>
-
-        {/* Filters and Stats */}
         <Paper
           elevation={0}
           sx={{
             p: 3,
             mb: 3,
             borderRadius: 3,
-            background: 'linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))',
-            border: '1px solid rgba(139, 126, 200, 0.1)'
+            background:
+              "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+            border: "1px solid rgba(139, 126, 200, 0.1)",
           }}
         >
-          {/* Search and Filters */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={12} md={4}>
               <TextField
@@ -283,19 +302,18 @@ const TaskList = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search sx={{ color: 'text.secondary' }} />
+                      <Search sx={{ color: "text.secondary" }} />
                     </InputAdornment>
                   ),
                 }}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'white',
-                    borderRadius: 2
-                  }
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "white",
+                    borderRadius: 2,
+                  },
                 }}
               />
             </Grid>
-
             <Grid item xs={12} md={2}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
@@ -303,9 +321,9 @@ const TaskList = () => {
                   value={filterStatus}
                   label="Status"
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  sx={{ backgroundColor: 'white', borderRadius: 2 }}
+                  sx={{ backgroundColor: "white", borderRadius: 2 }}
                 >
-                  {statusOptions.map(option => (
+                  {statusOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
@@ -313,7 +331,6 @@ const TaskList = () => {
                 </Select>
               </FormControl>
             </Grid>
-
             <Grid item xs={12} md={2}>
               <FormControl fullWidth>
                 <InputLabel>Priority</InputLabel>
@@ -321,9 +338,9 @@ const TaskList = () => {
                   value={filterPriority}
                   label="Priority"
                   onChange={(e) => setFilterPriority(e.target.value)}
-                  sx={{ backgroundColor: 'white', borderRadius: 2 }}
+                  sx={{ backgroundColor: "white", borderRadius: 2 }}
                 >
-                  {priorityOptions.map(option => (
+                  {priorityOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
@@ -331,7 +348,6 @@ const TaskList = () => {
                 </Select>
               </FormControl>
             </Grid>
-
             <Grid item xs={12} md={2}>
               <FormControl fullWidth>
                 <InputLabel>Project</InputLabel>
@@ -339,10 +355,10 @@ const TaskList = () => {
                   value={filterProject}
                   label="Project"
                   onChange={(e) => setFilterProject(e.target.value)}
-                  sx={{ backgroundColor: 'white', borderRadius: 2 }}
+                  sx={{ backgroundColor: "white", borderRadius: 2 }}
                 >
                   <MenuItem value="all">All Projects</MenuItem>
-                  {projects.map(project => (
+                  {projects.map((project) => (
                     <MenuItem key={project.id} value={project.id}>
                       {project.name}
                     </MenuItem>
@@ -350,7 +366,6 @@ const TaskList = () => {
                 </Select>
               </FormControl>
             </Grid>
-
             <Grid item xs={12} md={2}>
               <FormControl fullWidth>
                 <InputLabel>Sort By</InputLabel>
@@ -358,7 +373,7 @@ const TaskList = () => {
                   value={sortBy}
                   label="Sort By"
                   onChange={(e) => setSortBy(e.target.value)}
-                  sx={{ backgroundColor: 'white', borderRadius: 2 }}
+                  sx={{ backgroundColor: "white", borderRadius: 2 }}
                 >
                   <MenuItem value="recent">Recent</MenuItem>
                   <MenuItem value="name">Name</MenuItem>
@@ -368,11 +383,16 @@ const TaskList = () => {
               </FormControl>
             </Grid>
           </Grid>
-
-          {/* Quick Stats */}
           <Grid container spacing={2}>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 2, borderRadius: 2, backgroundColor: 'white' }}>
+              <Box
+                sx={{
+                  textAlign: "center",
+                  p: 2,
+                  borderRadius: 2,
+                  backgroundColor: "white",
+                }}
+              >
                 <Typography variant="h4" fontWeight={700} color="primary">
                   {tasks.length}
                 </Typography>
@@ -382,9 +402,20 @@ const TaskList = () => {
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 2, borderRadius: 2, backgroundColor: 'white' }}>
-                <Typography variant="h4" fontWeight={700} sx={{ color: '#FFD3A5' }}>
-                  {getTasksByStatus('in-progress')}
+              <Box
+                sx={{
+                  textAlign: "center",
+                  p: 2,
+                  borderRadius: 2,
+                  backgroundColor: "white",
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  fontWeight={700}
+                  sx={{ color: "#FFD3A5" }}
+                >
+                  {getTasksByStatus("in-progress")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   In Progress
@@ -392,9 +423,20 @@ const TaskList = () => {
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 2, borderRadius: 2, backgroundColor: 'white' }}>
-                <Typography variant="h4" fontWeight={700} sx={{ color: '#A8E6CF' }}>
-                  {getTasksByStatus('completed')}
+              <Box
+                sx={{
+                  textAlign: "center",
+                  p: 2,
+                  borderRadius: 2,
+                  backgroundColor: "white",
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  fontWeight={700}
+                  sx={{ color: "#A8E6CF" }}
+                >
+                  {getTasksByStatus("completed")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Completed
@@ -402,9 +444,20 @@ const TaskList = () => {
               </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={{ textAlign: 'center', p: 2, borderRadius: 2, backgroundColor: 'white' }}>
-                <Typography variant="h4" fontWeight={700} sx={{ color: '#A5C9FF' }}>
-                  {getTasksByStatus('pending')}
+              <Box
+                sx={{
+                  textAlign: "center",
+                  p: 2,
+                  borderRadius: 2,
+                  backgroundColor: "white",
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  fontWeight={700}
+                  sx={{ color: "#A5C9FF" }}
+                >
+                  {getTasksByStatus("pending")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Pending
@@ -413,79 +466,115 @@ const TaskList = () => {
             </Grid>
           </Grid>
         </Paper>
-
-        {/* Tasks List */}
         {filteredAndSortedTasks.length === 0 ? (
           <Paper
             elevation={0}
             sx={{
               p: 8,
-              textAlign: 'center',
+              textAlign: "center",
               borderRadius: 3,
-              background: 'linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))',
-              border: '1px solid rgba(139, 126, 200, 0.1)'
+              background:
+                "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+              border: "1px solid rgba(139, 126, 200, 0.1)",
             }}
           >
-            <Assignment sx={{ fontSize: 60, color: 'text.secondary', mb: 2, opacity: 0.7 }} />
+            <Assignment
+              sx={{
+                fontSize: 60,
+                color: "text.secondary",
+                mb: 2,
+                opacity: 0.7,
+              }}
+            />
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-              {searchTerm || filterStatus !== 'all' ? 'No tasks found' : 'No tasks yet'}
+              {searchTerm || filterStatus !== "all"
+                ? "No tasks found"
+                : "No tasks yet"}
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-              {searchTerm || filterStatus !== 'all' ?
-                'Try adjusting your search or filter criteria.' :
-                'Create your first project to start adding tasks and tracking progress.'
-              }
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ mb: 3, maxWidth: 400, mx: "auto" }}
+            >
+              {searchTerm || filterStatus !== "all"
+                ? "Try adjusting your search or filter criteria."
+                : "Create your first project to start adding tasks and tracking progress."}
             </Typography>
-            {!searchTerm && filterStatus === 'all' && (
+            {!searchTerm && filterStatus === "all" && (
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => navigate('/projects/new')}
-                sx={{ borderRadius: 2, px: 4, py: 1.5, textTransform: 'none', fontWeight: 600 }}
+                onClick={() => navigate("/projects/new")}
+                sx={{
+                  borderRadius: 2,
+                  px: 4,
+                  py: 1.5,
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
               >
                 Create Your First Project
               </Button>
             )}
           </Paper>
         ) : (
-          <Paper elevation={0} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+          <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
             <List sx={{ p: 0 }}>
               {filteredAndSortedTasks.map((task, index) => (
                 <React.Fragment key={task.id}>
                   <ListItem
                     sx={{
                       p: 3,
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: 'rgba(139, 126, 200, 0.05)'
-                      }
+                      cursor: "pointer",
+                      "&:hover": {
+                        backgroundColor: "rgba(139, 126, 200, 0.05)",
+                      },
                     }}
                   >
                     <ListItemIcon>
                       <Checkbox
-                        checked={task.status === 'completed'}
-                        onChange={() => handleStatusChange(
-                          task.id,
-                          task.status === 'completed' ? 'pending' : 'completed'
-                        )}
+                        checked={task.status === "completed"}
+                        onChange={() =>
+                          handleStatusChange(
+                            task.id,
+                            task.status === "completed"
+                              ? "pending"
+                              : "completed"
+                          )
+                        }
                         sx={{
-                          color: task.status === 'completed' ? '#A8E6CF' : 'text.secondary',
-                          '&.Mui-checked': {
-                            color: '#A8E6CF'
-                          }
+                          color:
+                            task.status === "completed"
+                              ? "#A8E6CF"
+                              : "text.secondary",
+                          "&.Mui-checked": {
+                            color: "#A8E6CF",
+                          },
                         }}
                       />
                     </ListItemIcon>
-
                     <ListItemText
                       primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            mb: 1,
+                          }}
+                        >
                           <Typography
                             variant="body1"
                             fontWeight={600}
                             sx={{
-                              textDecoration: task.status === 'completed' ? 'line-through' : 'none',
-                              color: task.status === 'completed' ? 'text.secondary' : 'text.primary'
+                              textDecoration:
+                                task.status === "completed"
+                                  ? "line-through"
+                                  : "none",
+                              color:
+                                task.status === "completed"
+                                  ? "text.secondary"
+                                  : "text.primary",
                             }}
                           >
                             {task.name}
@@ -495,10 +584,10 @@ const TaskList = () => {
                             size="small"
                             sx={{
                               height: 20,
-                              fontSize: '0.7rem',
+                              fontSize: "0.7rem",
                               backgroundColor: getStatusColor(task.status),
-                              color: 'white',
-                              fontWeight: 500
+                              color: "white",
+                              fontWeight: 500,
                             }}
                           />
                           <Chip
@@ -507,10 +596,10 @@ const TaskList = () => {
                             variant="outlined"
                             sx={{
                               height: 20,
-                              fontSize: '0.7rem',
+                              fontSize: "0.7rem",
                               borderColor: getPriorityColor(task.priority),
                               color: getPriorityColor(task.priority),
-                              fontWeight: 500
+                              fontWeight: 500,
                             }}
                           />
                         </Box>
@@ -523,50 +612,72 @@ const TaskList = () => {
                               color="text.secondary"
                               sx={{
                                 mb: 1,
-                                display: '-webkit-box',
+                                display: "-webkit-box",
                                 WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
                               }}
                             >
                               {task.description}
                             </Typography>
                           )}
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              <strong>Project:</strong> {getProjectName(task.projectId)}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              <strong>Project:</strong>{" "}
+                              {getProjectName(task.projectId)}
                             </Typography>
                             {task.category && (
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
                                 <strong>Category:</strong> {task.category}
                               </Typography>
                             )}
                             {task.createdAt && (
-                              <Typography variant="caption" color="text.secondary">
-                                <strong>Created:</strong> {formatDate(task.createdAt)}
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                <strong>Created:</strong>{" "}
+                                {formatDate(task.createdAt)}
                               </Typography>
                             )}
                           </Box>
                         </Box>
                       }
                     />
-
                     <ListItemSecondaryAction>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {task.status === 'in-progress' && (
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        {task.status === "in-progress" && (
                           <IconButton
                             size="small"
-                            onClick={() => handleStatusChange(task.id, 'completed')}
-                            sx={{ color: '#A8E6CF' }}
+                            onClick={() =>
+                              handleStatusChange(task.id, "completed")
+                            }
+                            sx={{ color: "#A8E6CF" }}
                           >
                             <CheckCircle />
                           </IconButton>
                         )}
-                        {task.status === 'pending' && (
+                        {task.status === "pending" && (
                           <IconButton
                             size="small"
-                            onClick={() => handleStatusChange(task.id, 'in-progress')}
-                            sx={{ color: '#FFD3A5' }}
+                            onClick={() =>
+                              handleStatusChange(task.id, "in-progress")
+                            }
+                            sx={{ color: "#FFD3A5" }}
                           >
                             <PlayArrow />
                           </IconButton>
@@ -586,17 +697,17 @@ const TaskList = () => {
             </List>
           </Paper>
         )}
-
-        {/* Context Menu */}
         <Menu
           anchorEl={menuAnchorEl}
           open={Boolean(menuAnchorEl)}
           onClose={handleMenuClose}
           PaperProps={{
-            sx: { borderRadius: 2, minWidth: 150 }
+            sx: { borderRadius: 2, minWidth: 150 },
           }}
         >
-          <MenuItem onClick={() => navigate(`/projects/${selectedTask?.projectId}`)}>
+          <MenuItem
+            onClick={() => navigate(`/projects/${selectedTask?.projectId}`)}
+          >
             <Visibility fontSize="small" sx={{ mr: 1 }} />
             View Project
           </MenuItem>
@@ -604,28 +715,38 @@ const TaskList = () => {
             <Edit fontSize="small" sx={{ mr: 1 }} />
             Edit Task
           </MenuItem>
-          <MenuItem onClick={handleDeleteTask} sx={{ color: 'error.main' }}>
+          <MenuItem onClick={handleDeleteTask} sx={{ color: "error.main" }}>
             <Delete fontSize="small" sx={{ mr: 1 }} />
             Delete Task
           </MenuItem>
         </Menu>
-
-        {/* Edit Task Dialog */}
-        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+        <Dialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
           <DialogTitle>Edit Task</DialogTitle>
           <DialogContent>
             <TextField
               fullWidth
               label="Task Name"
               value={editForm.name}
-              onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({ ...prev, name: e.target.value }))
+              }
               sx={{ mb: 2, mt: 1 }}
             />
             <TextField
               fullWidth
               label="Description"
               value={editForm.description}
-              onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setEditForm((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               multiline
               rows={3}
               sx={{ mb: 2 }}
@@ -637,7 +758,12 @@ const TaskList = () => {
                   <Select
                     value={editForm.status}
                     label="Status"
-                    onChange={(e) => setEditForm(prev => ({ ...prev, status: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        status: e.target.value,
+                      }))
+                    }
                   >
                     <MenuItem value="pending">Pending</MenuItem>
                     <MenuItem value="in-progress">In Progress</MenuItem>
@@ -652,7 +778,12 @@ const TaskList = () => {
                   <Select
                     value={editForm.priority}
                     label="Priority"
-                    onChange={(e) => setEditForm(prev => ({ ...prev, priority: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        priority: e.target.value,
+                      }))
+                    }
                   >
                     <MenuItem value="low">Low</MenuItem>
                     <MenuItem value="medium">Medium</MenuItem>
@@ -664,7 +795,11 @@ const TaskList = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button variant="contained" onClick={handleSaveEdit} disabled={!editForm.name.trim()}>
+            <Button
+              variant="contained"
+              onClick={handleSaveEdit}
+              disabled={!editForm.name.trim()}
+            >
               Save Changes
             </Button>
           </DialogActions>
