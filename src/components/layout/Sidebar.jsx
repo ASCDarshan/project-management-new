@@ -1,6 +1,5 @@
-// src/components/layout/Sidebar.jsx
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   List,
@@ -11,8 +10,8 @@ import {
   Typography,
   Divider,
   Chip,
-  Toolbar
-} from '@mui/material';
+  Toolbar,
+} from "@mui/material";
 import {
   Dashboard,
   FolderOpen,
@@ -21,58 +20,57 @@ import {
   People,
   Add,
   Analytics,
-  Settings
-} from '@mui/icons-material';
+} from "@mui/icons-material";
+
+const menuItems = [
+  {
+    text: "Dashboard",
+    icon: <Dashboard />,
+    path: "/projects",
+    color: "#8B7EC8",
+  },
+  {
+    text: "Projects",
+    icon: <FolderOpen />,
+    path: "/projects",
+    color: "#8B7EC8",
+    subItems: [
+      { text: "All Projects", path: "/projects" },
+      { text: "Create New", path: "/projects/new" },
+    ],
+  },
+  {
+    text: "Tasks",
+    icon: <Assignment />,
+    path: "/tasks",
+    color: "#A8E6CF",
+  },
+  {
+    text: "Categories",
+    icon: <Category />,
+    path: "/categories",
+    color: "#FFD3A5",
+  },
+  {
+    text: "Team",
+    icon: <People />,
+    path: "/employees",
+    color: "#B5A9D6",
+  },
+];
+
+const quickActions = [
+  {
+    text: "New Project",
+    icon: <Add />,
+    path: "/projects/new",
+    color: "#8B7EC8",
+  },
+];
 
 const Sidebar = ({ onItemClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
-
-  const menuItems = [
-    {
-      text: 'Dashboard',
-      icon: <Dashboard />,
-      path: '/projects',
-      color: '#8B7EC8'
-    },
-    {
-      text: 'Projects',
-      icon: <FolderOpen />,
-      path: '/projects',
-      color: '#8B7EC8',
-      subItems: [
-        { text: 'All Projects', path: '/projects' },
-        { text: 'Create New', path: '/projects/new' }
-      ]
-    },
-    {
-      text: 'Tasks',
-      icon: <Assignment />,
-      path: '/tasks',
-      color: '#A8E6CF'
-    },
-    {
-      text: 'Categories',
-      icon: <Category />,
-      path: '/categories',
-      color: '#FFD3A5'
-    },
-    {
-      text: 'Team',
-      icon: <People />,
-      path: '/employees',
-      color: '#B5A9D6'
-    }
-  ];
-
-  const quickActions = [
-    {
-      text: 'New Project',
-      icon: <Add />,
-      path: '/projects/new',
-      color: '#8B7EC8'
-    }
-  ];
 
   const handleItemClick = (path) => {
     navigate(path);
@@ -82,28 +80,28 @@ const Sidebar = ({ onItemClick }) => {
   };
 
   const isActive = (path) => {
-    return location.pathname === path || 
-           (path === '/projects' && location.pathname.startsWith('/projects'));
+    return (
+      location.pathname === path ||
+      (path === "/projects" && location.pathname.startsWith("/projects"))
+    );
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Toolbar />
-      
       <Box sx={{ p: 2, pt: 1 }}>
         <Typography
           variant="overline"
           sx={{
-            color: 'text.secondary',
+            color: "text.secondary",
             fontWeight: 600,
             letterSpacing: 1,
-            fontSize: '0.75rem'
+            fontSize: "0.75rem",
           }}
         >
           Main Menu
         </Typography>
       </Box>
-
       <List sx={{ px: 2 }}>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
@@ -113,20 +111,24 @@ const Sidebar = ({ onItemClick }) => {
                 borderRadius: 2,
                 py: 1.5,
                 px: 2,
-                backgroundColor: isActive(item.path) ? 'rgba(139, 126, 200, 0.1)' : 'transparent',
-                border: isActive(item.path) ? '1px solid rgba(139, 126, 200, 0.2)' : '1px solid transparent',
-                '&:hover': {
-                  backgroundColor: 'rgba(139, 126, 200, 0.08)',
-                  transform: 'translateX(4px)',
+                backgroundColor: isActive(item.path)
+                  ? "rgba(139, 126, 200, 0.1)"
+                  : "transparent",
+                border: isActive(item.path)
+                  ? "1px solid rgba(139, 126, 200, 0.2)"
+                  : "1px solid transparent",
+                "&:hover": {
+                  backgroundColor: "rgba(139, 126, 200, 0.08)",
+                  transform: "translateX(4px)",
                 },
-                transition: 'all 0.2s ease-in-out'
+                transition: "all 0.2s ease-in-out",
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: isActive(item.path) ? item.color : 'text.secondary',
+                  color: isActive(item.path) ? item.color : "text.secondary",
                   minWidth: 40,
-                  transition: 'color 0.2s ease-in-out'
+                  transition: "color 0.2s ease-in-out",
                 }}
               >
                 {item.icon}
@@ -134,11 +136,13 @@ const Sidebar = ({ onItemClick }) => {
               <ListItemText
                 primary={item.text}
                 sx={{
-                  '& .MuiListItemText-primary': {
+                  "& .MuiListItemText-primary": {
                     fontWeight: isActive(item.path) ? 600 : 500,
-                    color: isActive(item.path) ? 'text.primary' : 'text.secondary',
-                    fontSize: '0.95rem'
-                  }
+                    color: isActive(item.path)
+                      ? "text.primary"
+                      : "text.secondary",
+                    fontSize: "0.95rem",
+                  },
                 }}
               />
               {isActive(item.path) && (
@@ -146,8 +150,8 @@ const Sidebar = ({ onItemClick }) => {
                   sx={{
                     width: 4,
                     height: 4,
-                    borderRadius: '50%',
-                    backgroundColor: item.color
+                    borderRadius: "50%",
+                    backgroundColor: item.color,
                   }}
                 />
               )}
@@ -155,23 +159,20 @@ const Sidebar = ({ onItemClick }) => {
           </ListItem>
         ))}
       </List>
-
       <Divider sx={{ mx: 2, my: 2 }} />
-
       <Box sx={{ p: 2, pb: 1 }}>
         <Typography
           variant="overline"
           sx={{
-            color: 'text.secondary',
+            color: "text.secondary",
             fontWeight: 600,
             letterSpacing: 1,
-            fontSize: '0.75rem'
+            fontSize: "0.75rem",
           }}
         >
           Quick Actions
         </Typography>
       </Box>
-
       <List sx={{ px: 2 }}>
         {quickActions.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
@@ -183,17 +184,17 @@ const Sidebar = ({ onItemClick }) => {
                 px: 2,
                 background: `linear-gradient(135deg, ${item.color}15, ${item.color}08)`,
                 border: `1px solid ${item.color}30`,
-                '&:hover': {
+                "&:hover": {
                   background: `linear-gradient(135deg, ${item.color}25, ${item.color}15)`,
-                  transform: 'translateX(4px)',
+                  transform: "translateX(4px)",
                 },
-                transition: 'all 0.2s ease-in-out'
+                transition: "all 0.2s ease-in-out",
               }}
             >
               <ListItemIcon
                 sx={{
                   color: item.color,
-                  minWidth: 40
+                  minWidth: 40,
                 }}
               >
                 {item.icon}
@@ -201,31 +202,29 @@ const Sidebar = ({ onItemClick }) => {
               <ListItemText
                 primary={item.text}
                 sx={{
-                  '& .MuiListItemText-primary': {
+                  "& .MuiListItemText-primary": {
                     fontWeight: 600,
                     color: item.color,
-                    fontSize: '0.95rem'
-                  }
+                    fontSize: "0.95rem",
+                  },
                 }}
               />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
-
       <Box sx={{ flexGrow: 1 }} />
-
       <Box sx={{ p: 2 }}>
         <Box
           sx={{
             p: 2,
             borderRadius: 2,
-            background: 'linear-gradient(135deg, #8B7EC815, #B5A9D615)',
-            border: '1px solid rgba(139, 126, 200, 0.1)',
-            textAlign: 'center'
+            background: "linear-gradient(135deg, #8B7EC815, #B5A9D615)",
+            border: "1px solid rgba(139, 126, 200, 0.1)",
+            textAlign: "center",
           }}
         >
-          <Analytics sx={{ color: '#8B7EC8', mb: 1, fontSize: 32 }} />
+          <Analytics sx={{ color: "#8B7EC8", mb: 1, fontSize: 32 }} />
           <Typography variant="subtitle2" fontWeight={600} gutterBottom>
             Project Insights
           </Typography>
@@ -236,9 +235,9 @@ const Sidebar = ({ onItemClick }) => {
             label="Coming Soon"
             size="small"
             sx={{
-              backgroundColor: 'rgba(139, 126, 200, 0.1)',
-              color: '#8B7EC8',
-              fontWeight: 500
+              backgroundColor: "rgba(139, 126, 200, 0.1)",
+              color: "#8B7EC8",
+              fontWeight: 500,
             }}
           />
         </Box>

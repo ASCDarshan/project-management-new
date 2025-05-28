@@ -1,8 +1,7 @@
-// src/hooks/useFirestore.js
-import { useState, useEffect } from 'react';
-import { firebaseService } from '../services/firebase';
+import { useState, useEffect } from "react";
+import { firebaseService } from "../services/firebase";
 
-export const useFirestore = (collection, dependencies = []) => {
+export const useFirestore = (collection) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,25 +15,30 @@ export const useFirestore = (collection, dependencies = []) => {
         setError(null);
 
         switch (collection) {
-          case 'projects':
+          case "projects": {
             unsubscribe = firebaseService.subscribeToProjects((projects) => {
               setData(projects);
               setLoading(false);
             });
             break;
-          
-          case 'tasks':
+          }
+
+          case "tasks": {
             unsubscribe = firebaseService.subscribeToTasks((tasks) => {
               setData(tasks);
               setLoading(false);
             });
             break;
-          
-          default:
-            // For static collections like categories and employees
-            const result = await firebaseService[`get${collection.charAt(0).toUpperCase() + collection.slice(1)}`]();
+          }
+
+          default: {
+            const result = await firebaseService[
+              `get${collection.charAt(0).toUpperCase() + collection.slice(1)}`
+            ]();
             setData(result);
             setLoading(false);
+            break;
+          }
         }
       } catch (err) {
         setError(err.message);
@@ -45,22 +49,21 @@ export const useFirestore = (collection, dependencies = []) => {
     fetchData();
 
     return () => {
-      if (unsubscribe && typeof unsubscribe === 'function') {
+      if (unsubscribe && typeof unsubscribe === "function") {
         unsubscribe();
       }
     };
-  }, dependencies);
+  }, [collection]);
 
   const refresh = () => {
     setLoading(true);
-    // Re-trigger the effect by updating a dependency
   };
 
   return {
     data,
     loading,
     error,
-    refresh
+    refresh,
   };
 };
 
@@ -68,7 +71,6 @@ export const useFirestore = (collection, dependencies = []) => {
 export const useProjects = (userId = null) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const unsubscribe = firebaseService.subscribeToProjects((projectsData) => {
@@ -79,13 +81,12 @@ export const useProjects = (userId = null) => {
     return unsubscribe;
   }, [userId]);
 
-  return { projects, loading, error };
+  return { projects, loading };
 };
 
 export const useTasks = (projectId = null) => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const unsubscribe = firebaseService.subscribeToTasks((tasksData) => {
@@ -96,7 +97,7 @@ export const useTasks = (projectId = null) => {
     return unsubscribe;
   }, [projectId]);
 
-  return { tasks, loading, error };
+  return { tasks, loading };
 };
 
 export const useCategories = () => {
