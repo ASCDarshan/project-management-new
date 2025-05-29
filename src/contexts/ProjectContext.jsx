@@ -2,159 +2,6 @@ import React, { createContext, useState, useEffect } from "react";
 import { firebaseService } from "../services/firebase";
 import useAuth from "../hooks/useAuth";
 
-const defaultCategories = [
-  {
-    id: "planning-analysis",
-    name: "Planning & Analysis",
-    color: "#64B5F6",
-    description: "Project planning and requirements analysis",
-    subcategories: [
-      {
-        name: "Requirements Gathering",
-        tasks: [
-          "Stakeholder interviews",
-          "Business requirements documentation",
-          "Functional requirements specification",
-          "Non-functional requirements",
-          "User story creation",
-          "Acceptance criteria definition",
-        ],
-      },
-      {
-        name: "Project Planning",
-        tasks: [
-          "Project scope definition",
-          "Work breakdown structure",
-          "Timeline creation and milestones",
-          "Resource allocation planning",
-          "Risk assessment and mitigation",
-          "Budget estimation and approval",
-        ],
-      },
-    ],
-  },
-  {
-    id: "design-architecture",
-    name: "Design & Architecture",
-    color: "#FFB74D",
-    description: "System design and user experience planning",
-    subcategories: [
-      {
-        name: "System Design",
-        tasks: [
-          "System architecture design",
-          "Database schema design",
-          "API design and documentation",
-          "Security architecture planning",
-          "Performance optimization strategy",
-          "Integration points mapping",
-        ],
-      },
-      {
-        name: "UI/UX Design",
-        tasks: [
-          "User experience research",
-          "Wireframe and mockup creation",
-          "Interactive prototype development",
-          "Design system creation",
-          "Usability testing and feedback",
-          "Responsive design planning",
-        ],
-      },
-    ],
-  },
-  {
-    id: "development",
-    name: "Development",
-    color: "#81C784",
-    description: "Software development and implementation",
-    subcategories: [
-      {
-        name: "Frontend Development",
-        tasks: [
-          "Component development and testing",
-          "State management implementation",
-          "Responsive design implementation",
-          "Cross-browser compatibility testing",
-          "Performance optimization",
-          "Accessibility implementation",
-        ],
-      },
-      {
-        name: "Backend Development",
-        tasks: [
-          "API development and testing",
-          "Database implementation",
-          "Authentication and authorization",
-          "Data validation and sanitization",
-          "Error handling and logging",
-          "Third-party integrations",
-        ],
-      },
-    ],
-  },
-  {
-    id: "testing-qa",
-    name: "Testing & Quality Assurance",
-    color: "#BDBDBD",
-    description: "Quality assurance and testing processes",
-    subcategories: [
-      {
-        name: "Testing",
-        tasks: [
-          "Unit testing implementation",
-          "Integration testing",
-          "System and end-to-end testing",
-          "User acceptance testing",
-          "Performance and load testing",
-          "Security testing and validation",
-        ],
-      },
-      {
-        name: "Quality Assurance",
-        tasks: [
-          "Code review and standards",
-          "Documentation review",
-          "Automated testing setup",
-          "Bug tracking and resolution",
-          "Quality metrics monitoring",
-          "Release readiness assessment",
-        ],
-      },
-    ],
-  },
-  {
-    id: "deployment-maintenance",
-    name: "Deployment & Maintenance",
-    color: "#6BBF6B",
-    description: "Deployment, monitoring, and ongoing maintenance",
-    subcategories: [
-      {
-        name: "Deployment",
-        tasks: [
-          "Environment setup and configuration",
-          "CI/CD pipeline configuration",
-          "Production deployment and rollback",
-          "Monitoring and alerting setup",
-          "Backup and disaster recovery",
-          "Performance monitoring setup",
-        ],
-      },
-      {
-        name: "Maintenance",
-        tasks: [
-          "Regular system updates",
-          "Security patches and updates",
-          "Performance monitoring and optimization",
-          "User support and issue resolution",
-          "Documentation updates and maintenance",
-          "System health monitoring",
-        ],
-      },
-    ],
-  },
-];
-
 const ProjectContext = createContext();
 
 export const ProjectProvider = ({ children }) => {
@@ -165,27 +12,6 @@ export const ProjectProvider = ({ children }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const initializeCategories = async () => {
-      try {
-        const existingCategories = await firebaseService.getCategories();
-        if (existingCategories.length === 0) {
-          for (const category of defaultCategories) {
-            await firebaseService.createCategory(category);
-          }
-          setCategories(defaultCategories);
-        } else {
-          setCategories(existingCategories);
-        }
-      } catch (error) {
-        console.error("Error initializing categories:", error);
-        setCategories(defaultCategories);
-      }
-    };
-
-    initializeCategories();
-  }, []);
 
   useEffect(() => {
     if (currentUser) {
@@ -455,8 +281,6 @@ export const ProjectProvider = ({ children }) => {
     loadEmployees,
 
     loadCategories,
-
-    defaultCategories,
   };
 
   return (
