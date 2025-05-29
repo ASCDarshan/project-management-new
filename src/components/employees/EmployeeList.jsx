@@ -29,18 +29,9 @@ import {
   useMediaQuery,
   CircularProgress,
 } from "@mui/material";
-import {
-  Add,
-  Search,
-  MoreVert,
-  Edit,
-  Delete,
-  Email,
-  Phone,
-  Group,
-} from "@mui/icons-material";
+import { Add, Search, Delete, Email, Phone, Group } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
-import ConfirmationDialog from "../ui/ConfirmationDialog"; // Assuming ConfirmationDialog is in the same directory
+import ConfirmationDialog from "../common/ConfirmationDialog";
 
 const roleOptions = [
   { value: "all", label: "All Roles" },
@@ -106,7 +97,6 @@ const EmployeeList = () => {
   const [filterRole, setFilterRole] = useState("all");
   const [dialogType, setDialogType] = useState("create");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -141,11 +131,9 @@ const EmployeeList = () => {
   const handleMenuOpen = (event, employee) => {
     event.stopPropagation();
     setSelectedEmployee(employee);
-    setMenuAnchorEl(event.currentTarget);
   };
 
   const handleMenuClose = () => {
-    setMenuAnchorEl(null);
     setSelectedEmployee(null);
   };
 
@@ -660,7 +648,14 @@ const EmployeeList = () => {
                             },
                           }}
                         >
-                          <MoreVert />
+                          <Delete
+                            fontSize="small"
+                            onClick={() => {
+                              handleDeleteClick();
+                              handleMenuClose();
+                            }}
+                            sx={{ mr: 1, color: "error.main" }}
+                          />
                         </IconButton>
                       </Box>
                       <Typography
@@ -794,7 +789,7 @@ const EmployeeList = () => {
                           },
                         }}
                       >
-                        View Details
+                        Edit Details
                       </Button>
                     </CardActions>
                   </Card>
@@ -803,33 +798,6 @@ const EmployeeList = () => {
             ))}
           </Grid>
         )}
-        <Menu
-          anchorEl={menuAnchorEl}
-          open={Boolean(menuAnchorEl)}
-          onClose={handleMenuClose}
-        >
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent event bubbling
-              handleOpenDialog("edit", selectedEmployee);
-              handleMenuClose();
-            }}
-          >
-            <Edit fontSize="small" sx={{ mr: 1 }} />
-            Edit
-          </MenuItem>
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteClick();
-              handleMenuClose();
-            }}
-            sx={{ color: "error.main" }}
-          >
-            <Delete fontSize="small" sx={{ mr: 1 }} />
-            Delete
-          </MenuItem>
-        </Menu>
         <Dialog
           open={dialogOpen}
           onClose={handleCloseDialog}

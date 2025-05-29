@@ -33,7 +33,7 @@ import {
   MoreVert,
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
-import ConfirmationDialog from "../ui/ConfirmationDialog";
+import ConfirmationDialog from "../common/ConfirmationDialog";
 
 const colorOptions = [
   "#2196F3",
@@ -55,19 +55,12 @@ const CategoryManager = () => {
     createCategory,
     updateCategory,
     deleteCategory,
-    createSubcategory,
-    updateSubcategory,
-    deleteSubcategory,
-    createTaskTemplate,
-    deleteTaskTemplate,
     loading: projectLoading,
   } = useProject();
 
-  const [dialogType, setDialogType] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [expandedCategory, setExpandedCategory] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -79,46 +72,20 @@ const CategoryManager = () => {
     description: "",
   });
 
-  const [taskForm, setTaskForm] = useState({
-    name: "",
-    categoryId: "",
-    subcategoryName: "",
-  });
-
-  const handleOpenDialog = (type, category = null, subcategory = null) => {
-    setDialogType(type);
+  const handleOpenDialog = (category = null) => {
     setSelectedCategory(category);
-    setSelectedSubcategory(subcategory);
-
-    if (type === "category") {
-      setFormData({
-        name: category?.name || "",
-        color: category?.color || "#8B7EC8",
-        description: category?.description || "",
-      });
-    } else if (type === "subcategory") {
-      setFormData({
-        name: subcategory?.name || "",
-        color: category?.color || "#8B7EC8",
-        description: "",
-      });
-    } else if (type === "task") {
-      setTaskForm({
-        name: "",
-        categoryId: category?.id || "",
-        subcategoryName: subcategory?.name || "",
-      });
-    }
-
+    setFormData({
+      name: category?.name || "",
+      color: category?.color || "#8B7EC8",
+      description: category?.description || "",
+    });
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedCategory(null);
-    setSelectedSubcategory(null);
     setFormData({ name: "", color: "#8B7EC8", description: "" });
-    setTaskForm({ name: "", categoryId: "", subcategoryName: "" });
   };
 
   const handleSaveCategory = async () => {
@@ -137,54 +104,8 @@ const CategoryManager = () => {
     }
   };
 
-  const handleSaveSubcategory = async () => {
-    try {
-      setActionLoading(true);
-      if (selectedSubcategory) {
-        await updateSubcategory(
-          selectedCategory.id,
-          selectedSubcategory.name,
-          formData.name
-        );
-      } else {
-        await createSubcategory(selectedCategory.id, formData.name);
-      }
-      handleCloseDialog();
-    } catch (error) {
-      console.error("Error saving subcategory:", error);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleSaveTask = async () => {
-    try {
-      setActionLoading(true);
-      await createTaskTemplate(
-        taskForm.categoryId,
-        taskForm.subcategoryName,
-        taskForm.name
-      );
-      handleCloseDialog();
-    } catch (error) {
-      console.error("Error saving task:", error);
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleMenuOpen = (event, category) => {
-    event.stopPropagation();
-    setSelectedCategory(category);
-    setMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-    setSelectedCategory(null);
-  };
-
   const handleDeleteCategory = async () => {
+    if (!selectedCategory) return;
     try {
       setActionLoading(true);
       await deleteCategory(selectedCategory.id);
@@ -197,28 +118,14 @@ const CategoryManager = () => {
     }
   };
 
-  const handleDeleteSubcategory = async (category, subcategory) => {
-    try {
-      setActionLoading(true);
-      await deleteSubcategory(category.id, subcategory.name);
-    } catch (error) {
-      console.error("Error deleting subcategory:", error);
-    } finally {
-      setActionLoading(false);
-      setConfirmOpen(false);
-    }
+  const handleMenuOpen = (event, category) => {
+    event.stopPropagation();
+    setSelectedCategory(category);
+    setMenuAnchorEl(event.currentTarget);
   };
 
-  const handleDeleteTask = async (category, subcategory, taskIndex) => {
-    try {
-      setActionLoading(true);
-      await deleteTaskTemplate(category.id, subcategory.name, taskIndex);
-    } catch (error) {
-      console.error("Error deleting task:", error);
-    } finally {
-      setActionLoading(false);
-      setConfirmOpen(false);
-    }
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
   };
 
   const showConfirmation = (action) => {
@@ -228,7 +135,7 @@ const CategoryManager = () => {
 
   const executeConfirmedAction = () => {
     if (confirmAction) {
-      confirmAction.action(...confirmAction.params);
+      confirmAction.action();
     }
   };
 
@@ -278,13 +185,13 @@ const CategoryManager = () => {
               Task Categories
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Organize your project tasks with custom categories and templates
+              Organize your project tasks with custom categories
             </Typography>
           </Box>
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => handleOpenDialog("category")}
+            onClick={() => handleOpenDialog()}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -443,13 +350,12 @@ const CategoryManager = () => {
               color="text.secondary"
               sx={{ mb: 3, maxWidth: 400, mx: "auto" }}
             >
-              Create your first category to start organizing tasks with custom
-              templates and workflows.
+              Create your first category to start organizing tasks.
             </Typography>
             <Button
               variant="contained"
               startIcon={<Add />}
-              onClick={() => handleOpenDialog("category")}
+              onClick={() => handleOpenDialog()}
               sx={{
                 borderRadius: 2,
                 px: 4,
@@ -569,67 +475,6 @@ const CategoryManager = () => {
                               <Typography variant="subtitle1" fontWeight={600}>
                                 {subcategory.name}
                               </Typography>
-                              <Box sx={{ display: "flex", gap: 1 }}>
-                                <Button
-                                  size="small"
-                                  startIcon={<Add />}
-                                  variant="contained"
-                                  onClick={() =>
-                                    handleOpenDialog(
-                                      "task",
-                                      category,
-                                      subcategory
-                                    )
-                                  }
-                                  sx={{
-                                    borderRadius: 2,
-                                    textTransform: "none",
-                                  }}
-                                  disabled={projectLoading || actionLoading}
-                                >
-                                  Add Task
-                                </Button>
-                                <Button
-                                  size="small"
-                                  startIcon={<Edit />}
-                                  variant="contained"
-                                  onClick={() =>
-                                    handleOpenDialog(
-                                      "subcategory",
-                                      category,
-                                      subcategory
-                                    )
-                                  }
-                                  sx={{
-                                    borderRadius: 2,
-                                    textTransform: "none",
-                                  }}
-                                  disabled={projectLoading || actionLoading}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  size="small"
-                                  startIcon={<Delete />}
-                                  variant="outlined"
-                                  color="error"
-                                  onClick={() =>
-                                    showConfirmation({
-                                      action: handleDeleteSubcategory,
-                                      params: [category, subcategory],
-                                      title: "Delete Subcategory",
-                                      message: `Are you sure you want to delete the subcategory "${subcategory.name}" and all its tasks?`,
-                                    })
-                                  }
-                                  sx={{
-                                    borderRadius: 2,
-                                    textTransform: "none",
-                                  }}
-                                  disabled={projectLoading || actionLoading}
-                                >
-                                  Delete
-                                </Button>
-                              </Box>
                             </Box>
                             {subcategory.tasks &&
                             subcategory.tasks.length > 0 ? (
@@ -646,18 +491,6 @@ const CategoryManager = () => {
                                     label={task}
                                     size="small"
                                     variant="outlined"
-                                    onDelete={() =>
-                                      showConfirmation({
-                                        action: handleDeleteTask,
-                                        params: [
-                                          category,
-                                          subcategory,
-                                          taskIndex,
-                                        ],
-                                        title: "Delete Task Template",
-                                        message: `Are you sure you want to delete the task template "${task}"?`,
-                                      })
-                                    }
                                     sx={{
                                       borderColor: `${category.color}`,
                                       color: category.color,
@@ -682,9 +515,6 @@ const CategoryManager = () => {
                         fullWidth
                         variant="outlined"
                         startIcon={<Add />}
-                        onClick={() =>
-                          handleOpenDialog("subcategory", category)
-                        }
                         sx={{
                           mt: 2,
                           borderColor: category.color,
@@ -710,36 +540,24 @@ const CategoryManager = () => {
           anchorEl={menuAnchorEl}
           open={Boolean(menuAnchorEl)}
           onClose={handleMenuClose}
-          PaperProps={{
-            sx: { borderRadius: 2, minWidth: 150 },
-          }}
+          PaperProps={{ sx: { borderRadius: 2, minWidth: 150 } }}
         >
           <MenuItem
             onClick={() => {
-              handleOpenDialog("category", selectedCategory);
+              handleOpenDialog(selectedCategory);
               handleMenuClose();
             }}
             disabled={actionLoading}
           >
             <Edit fontSize="small" sx={{ mr: 1 }} />
-            Edit Category
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              handleOpenDialog("subcategory", selectedCategory);
-              handleMenuClose();
-            }}
-            disabled={actionLoading}
-          >
-            <Add fontSize="small" sx={{ mr: 1 }} />
-            Add Subcategory
+            Edit
           </MenuItem>
           <MenuItem
             onClick={() => {
               showConfirmation({
                 action: handleDeleteCategory,
                 title: "Delete Category",
-                message: `Are you sure you want to delete the category "${selectedCategory?.name}" and all its contents?`,
+                message: `Are you sure you want to delete "${selectedCategory?.name}"? This action cannot be undone.`,
               });
               handleMenuClose();
             }}
@@ -747,7 +565,7 @@ const CategoryManager = () => {
             disabled={actionLoading}
           >
             <Delete fontSize="small" sx={{ mr: 1 }} />
-            Delete Category
+            Delete
           </MenuItem>
         </Menu>
 
@@ -758,89 +576,63 @@ const CategoryManager = () => {
           fullWidth
         >
           <DialogTitle>
-            {dialogType === "category" &&
-              (selectedCategory ? "Edit Category" : "New Category")}
-            {dialogType === "subcategory" &&
-              (selectedSubcategory ? "Edit Subcategory" : "New Subcategory")}
-            {dialogType === "task" && "Add Task Template"}
+            {selectedCategory ? "Edit Category" : "New Category"}
           </DialogTitle>
-
           <DialogContent>
-            {(dialogType === "category" || dialogType === "subcategory") && (
-              <>
-                <TextField
-                  fullWidth
-                  label="Name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+            <TextField
+              autoFocus
+              fullWidth
+              label="Category Name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
+              sx={{ mb: 3, mt: 1 }}
+              disabled={actionLoading}
+            />
+            <Typography variant="subtitle2" gutterBottom>
+              Color
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
+              {colorOptions.map((color) => (
+                <Box
+                  key={color}
+                  onClick={() =>
+                    !actionLoading &&
+                    setFormData((prev) => ({ ...prev, color }))
                   }
-                  sx={{ mb: 3, mt: 1 }}
-                  disabled={actionLoading}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    backgroundColor: color,
+                    cursor: actionLoading ? "not-allowed" : "pointer",
+                    border:
+                      formData.color === color
+                        ? `3px solid ${theme.palette.primary.main}`
+                        : "3px solid transparent",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      transform: actionLoading ? "none" : "scale(1.1)",
+                    },
+                  }}
                 />
-                {dialogType === "category" && (
-                  <>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Color
-                    </Typography>
-                    <Box
-                      sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}
-                    >
-                      {colorOptions.map((color) => (
-                        <Box
-                          key={color}
-                          onClick={() =>
-                            setFormData((prev) => ({ ...prev, color }))
-                          }
-                          sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: "50%",
-                            backgroundColor: color,
-                            cursor: "pointer",
-                            border:
-                              formData.color === color
-                                ? "3px solid #333"
-                                : "2px solid transparent",
-                            transition: "all 0.2s ease-in-out",
-                            "&:hover": {
-                              transform: "scale(1.1)",
-                            },
-                          }}
-                        />
-                      ))}
-                    </Box>
-                    <TextField
-                      fullWidth
-                      label="Description (Optional)"
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          description: e.target.value,
-                        }))
-                      }
-                      multiline
-                      rows={3}
-                      disabled={actionLoading}
-                    />
-                  </>
-                )}
-              </>
-            )}
-            {dialogType === "task" && (
-              <TextField
-                fullWidth
-                label="Task Name"
-                value={taskForm.name}
-                onChange={(e) =>
-                  setTaskForm((prev) => ({ ...prev, name: e.target.value }))
-                }
-                sx={{ mt: 1 }}
-                placeholder="Enter task template name..."
-                disabled={actionLoading}
-              />
-            )}
+              ))}
+            </Box>
+            <TextField
+              fullWidth
+              label="Description (Optional)"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+              multiline
+              rows={3}
+              disabled={actionLoading}
+            />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog} disabled={actionLoading}>
@@ -848,40 +640,15 @@ const CategoryManager = () => {
             </Button>
             <Button
               variant="contained"
-              onClick={
-                dialogType === "category"
-                  ? handleSaveCategory
-                  : dialogType === "subcategory"
-                  ? handleSaveSubcategory
-                  : handleSaveTask
-              }
-              disabled={
-                actionLoading ||
-                (dialogType === "category" || dialogType === "subcategory"
-                  ? !formData.name.trim()
-                  : !taskForm.name.trim())
-              }
+              onClick={handleSaveCategory}
+              disabled={actionLoading || !formData.name.trim()}
               startIcon={actionLoading ? <CircularProgress size={20} /> : null}
             >
               {actionLoading
-                ? dialogType === "category" && selectedCategory
-                  ? "Updating..."
-                  : dialogType === "category"
-                  ? "Creating..."
-                  : dialogType === "subcategory" && selectedSubcategory
-                  ? "Updating..."
-                  : dialogType === "subcategory"
-                  ? "Creating..."
-                  : "Saving..."
-                : dialogType === "category" && selectedCategory
-                ? "Update"
-                : dialogType === "category"
-                ? "Create"
-                : dialogType === "subcategory" && selectedSubcategory
-                ? "Update"
-                : dialogType === "subcategory"
-                ? "Create"
-                : "Add Task"}
+                ? "Saving..."
+                : selectedCategory
+                ? "Update Category"
+                : "Create Category"}
             </Button>
           </DialogActions>
         </Dialog>
