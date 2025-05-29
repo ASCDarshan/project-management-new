@@ -23,6 +23,12 @@ import {
   Fade,
   useTheme,
   CircularProgress,
+  Input,
+  Select,
+  FormControl,
+  InputLabel,
+  Checkbox,
+  ListItemText,
 } from "@mui/material";
 import {
   Add,
@@ -34,6 +40,7 @@ import {
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
 import ConfirmationDialog from "../common/ConfirmationDialog";
+import defaultCategories from "../../utils/defaultCategory";
 
 const colorOptions = [
   "#2196F3",
@@ -66,6 +73,41 @@ const CategoryManager = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
 
+  const [newTasks, setNewTasks] = useState({});
+
+  const handleNewTaskInputChange = (index, value) => {
+    setNewTasks((prev) => ({ ...prev, [index]: value }));
+  };
+
+  const handleAddTask = (subIndex) => {
+    const newTask = newTasks[subIndex]?.trim();
+    if (!newTask) return;
+
+    setFormData((prev) => {
+      const updatedSubcategories = [...prev.subcategories];
+      const currentTasks = updatedSubcategories[subIndex].tasks || [];
+      updatedSubcategories[subIndex] = {
+        ...updatedSubcategories[subIndex],
+        tasks: [...currentTasks, newTask],
+      };
+      return { ...prev, subcategories: updatedSubcategories };
+    });
+
+    setNewTasks((prev) => ({ ...prev, [subIndex]: "" }));
+  };
+
+  const handleRemoveTask = (subIndex, taskIndex) => {
+    setFormData((prev) => {
+      const updatedSubcategories = [...prev.subcategories];
+      const currentTasks = updatedSubcategories[subIndex].tasks || [];
+      updatedSubcategories[subIndex] = {
+        ...updatedSubcategories[subIndex],
+        tasks: currentTasks.filter((_, idx) => idx !== taskIndex),
+      };
+      return { ...prev, subcategories: updatedSubcategories };
+    });
+  };
+
   const [formData, setFormData] = useState({
     name: "",
     color: "#8B7EC8",
@@ -78,14 +120,33 @@ const CategoryManager = () => {
       name: category?.name || "",
       color: category?.color || "#8B7EC8",
       description: category?.description || "",
+      subcategories:
+        category?.subcategories?.map((sub) => ({
+          name: sub.name,
+          tasks: sub.tasks || [],
+        })) || [],
     });
+
+    // Initialize new tasks state for each subcategory
+    const initialNewTasks = {};
+    if (category?.subcategories) {
+      category.subcategories.forEach((_, idx) => {
+        initialNewTasks[idx] = "";
+      });
+    }
+    setNewTasks(initialNewTasks);
+
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedCategory(null);
-    setFormData({ name: "", color: "#8B7EC8", description: "" });
+    setFormData({
+      name: "",
+      color: "#8B7EC8",
+      description: "",
+    });
   };
 
   const handleSaveCategory = async () => {
@@ -477,57 +538,32 @@ const CategoryManager = () => {
                               </Typography>
                             </Box>
                             {subcategory.tasks &&
-                            subcategory.tasks.length > 0 ? (
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 1,
-                                }}
-                              >
-                                {subcategory.tasks.map((task, taskIndex) => (
-                                  <Chip
-                                    key={taskIndex}
-                                    label={task}
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{
-                                      borderColor: `${category.color}`,
-                                      color: category.color,
-                                      backgroundColor: `${category.color}10`,
-                                    }}
-                                  />
-                                ))}
-                              </Box>
-                            ) : (
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ fontStyle: "italic" }}
-                              >
-                                No tasks in this subcategory
-                              </Typography>
-                            )}
+                              subcategory.tasks.length > 0 && (
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 1,
+                                  }}
+                                >
+                                  {subcategory.tasks.map((task, taskIndex) => (
+                                    <Chip
+                                      key={taskIndex}
+                                      label={task}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        borderColor: `${category.color}`,
+                                        color: category.color,
+                                        backgroundColor: `${category.color}10`,
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              )}
                           </CardContent>
                         </Card>
                       ))}
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        startIcon={<Add />}
-                        sx={{
-                          mt: 2,
-                          borderColor: category.color,
-                          color: category.color,
-                          "&:hover": {
-                            borderColor: category.color,
-                            backgroundColor: `${category.color}10`,
-                          },
-                        }}
-                        disabled={projectLoading || actionLoading}
-                      >
-                        Add Subcategory
-                      </Button>
                     </Box>
                   </AccordionDetails>
                 </Accordion>
@@ -579,17 +615,162 @@ const CategoryManager = () => {
             {selectedCategory ? "Edit Category" : "New Category"}
           </DialogTitle>
           <DialogContent>
-            <TextField
-              autoFocus
+            <FormControl
               fullWidth
-              label="Category Name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
               sx={{ mb: 3, mt: 1 }}
               disabled={actionLoading}
-            />
+            >
+              <InputLabel id="category-select-label">Category Name</InputLabel>
+              <Select
+                labelId="category-select-label"
+                value={formData.name}
+                onChange={(e) => {
+                  const selectedName = e.target.value;
+                  const selectedCat = defaultCategories.find(
+                    (cat) => cat.name === selectedName
+                  );
+                  setFormData((prev) => ({
+                    ...prev,
+                    name: selectedName,
+                    color: selectedCat?.color || "",
+                    description: selectedCat?.description || "",
+                    subcategories: [],
+                  }));
+                  setNewTasks({});
+                }}
+                label="Category Name"
+              >
+                {defaultCategories.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {formData.name && (
+              <FormControl fullWidth sx={{ mb: 3 }} disabled={actionLoading}>
+                <InputLabel id="subcategory-multi-label">
+                  Subcategories
+                </InputLabel>
+                <Select
+                  labelId="subcategory-multi-label"
+                  multiple
+                  value={formData.subcategories?.map((s) => s.name) || []}
+                  onChange={(e) => {
+                    const selectedCategory = defaultCategories.find(
+                      (cat) => cat.name === formData.name
+                    );
+                    const selectedNames = e.target.value;
+                    const selectedSubs =
+                      selectedCategory?.subcategories?.filter((sub) =>
+                        selectedNames.includes(sub.name)
+                      ) || [];
+
+                    // Preserve existing tasks when selecting/deselecting subcategories
+                    setFormData((prev) => ({
+                      ...prev,
+                      subcategories: selectedSubs.map((s) => ({
+                        ...s,
+                        tasks:
+                          // Keep existing tasks if the subcategory was already selected
+                          prev.subcategories?.find((p) => p.name === s.name)
+                            ?.tasks ||
+                          // Or initialize with empty array if it's a new selection
+                          [],
+                      })),
+                    }));
+
+                    // Initialize new tasks state for each subcategory
+                    const initialNewTasks = {};
+                    selectedSubs.forEach((_, idx) => {
+                      initialNewTasks[idx] = "";
+                    });
+                    setNewTasks(initialNewTasks);
+                  }}
+                  renderValue={(selected) => selected.join(", ")}
+                >
+                  {defaultCategories
+                    .find((cat) => cat.name === formData.name)
+                    ?.subcategories?.map((sub) => (
+                      <MenuItem key={sub.name} value={sub.name}>
+                        <Checkbox
+                          checked={formData.subcategories?.some(
+                            (s) => s.name === sub.name
+                          )}
+                        />
+                        <ListItemText primary={sub.name} />
+                      </MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+            )}
+            {formData.subcategories?.length > 0 && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  maxHeight: "30vh",
+                  overflowY: "auto",
+                  pr: 1,
+                  mb: 3,
+                }}
+              >
+                {formData.subcategories.map((sub, subIndex) => (
+                  <Paper
+                    key={subIndex}
+                    variant="outlined"
+                    sx={{ p: 2, borderRadius: 2 }}
+                  >
+                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                      {sub.name}
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 1,
+                        mb: sub.tasks?.length > 0 ? 2 : 0,
+                      }}
+                    >
+                      {sub.tasks?.map((task, taskIndex) => (
+                        <Chip
+                          key={taskIndex}
+                          label={task}
+                          onDelete={() => handleRemoveTask(subIndex, taskIndex)}
+                          disabled={actionLoading}
+                        />
+                      ))}
+                    </Box>
+
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Input
+                        placeholder="Add a new task..."
+                        fullWidth
+                        value={newTasks[subIndex] || ""}
+                        onChange={(e) =>
+                          handleNewTaskInputChange(subIndex, e.target.value)
+                        }
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleAddTask(subIndex)
+                        }
+                        disabled={actionLoading}
+                      />
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => handleAddTask(subIndex)}
+                        disabled={actionLoading || !newTasks[subIndex]}
+                      >
+                        Add
+                      </Button>
+                    </Box>
+                  </Paper>
+                ))}
+              </Box>
+            )}
             <Typography variant="subtitle2" gutterBottom>
               Color
             </Typography>
