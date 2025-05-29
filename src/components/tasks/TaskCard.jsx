@@ -39,29 +39,34 @@ const statusOptions = [
   {
     value: "pending",
     label: "Pending",
-    color: "#A5C9FF",
+    color: "#64B5F6",
     icon: <Schedule />,
   },
   {
     value: "in-progress",
     label: "In Progress",
-    color: "#FFD3A5",
+    color: "#FFB74D",
     icon: <PlayArrow />,
   },
   {
     value: "completed",
     label: "Completed",
-    color: "#A8E6CF",
+    color: "#81C784",
     icon: <CheckCircle />,
   },
-  { value: "blocked", label: "Blocked", color: "#FFAAA5", icon: <Pause /> },
+  {
+    value: "blocked",
+    label: "Blocked",
+    color: "#E57373",
+    icon: <Pause />,
+  },
 ];
 
 const priorityOptions = [
-  { value: "low", label: "Low", color: "#A8E6CF" },
-  { value: "medium", label: "Medium", color: "#FFD3A5" },
-  { value: "high", label: "High", color: "#FFAAA5" },
-  { value: "urgent", label: "Urgent", color: "#FF6B6B" },
+  { value: "low", label: "Low", color: "#81C784" },
+  { value: "medium", label: "Medium", color: "#FFD54F" },
+  { value: "high", label: "High", color: "#FFB74D" },
+  { value: "urgent", label: "Urgent", color: "#E57373" },
 ];
 
 const TaskCard = ({

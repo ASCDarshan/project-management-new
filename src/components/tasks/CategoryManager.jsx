@@ -21,6 +21,8 @@ import {
   Menu,
   MenuItem,
   Fade,
+  useTheme,
+  CircularProgress,
 } from "@mui/material";
 import {
   Add,
@@ -31,27 +33,45 @@ import {
   MoreVert,
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
+import ConfirmationDialog from "../ui/ConfirmationDialog";
 
 const colorOptions = [
-  "#8B7EC8",
-  "#B5A9D6",
-  "#A8E6CF",
-  "#FFD3A5",
-  "#FFAAA5",
-  "#A5C9FF",
-  "#E6E6FA",
-  "#F0F0FF",
-  "#D1C4E9",
-  "#C8F2D8",
+  "#2196F3",
+  "#4CAF50",
+  "#FFC107",
+  "#F44336",
+  "#9C27B0",
+  "#00BCD4",
+  "#FFEB3B",
+  "#795548",
+  "#9E9E9E",
+  "#E0E0E0",
 ];
 
 const CategoryManager = () => {
-  const { categories } = useProject();
+  const theme = useTheme();
+  const {
+    categories,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    createSubcategory,
+    updateSubcategory,
+    deleteSubcategory,
+    createTaskTemplate,
+    deleteTaskTemplate,
+    loading: projectLoading,
+  } = useProject();
+
   const [dialogType, setDialogType] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [expandedCategory, setExpandedCategory] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -68,6 +88,7 @@ const CategoryManager = () => {
   const handleOpenDialog = (type, category = null, subcategory = null) => {
     setDialogType(type);
     setSelectedCategory(category);
+    setSelectedSubcategory(subcategory);
 
     if (type === "category") {
       setFormData({
@@ -95,33 +116,61 @@ const CategoryManager = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedCategory(null);
+    setSelectedSubcategory(null);
     setFormData({ name: "", color: "#8B7EC8", description: "" });
     setTaskForm({ name: "", categoryId: "", subcategoryName: "" });
   };
 
-  const handleSaveCategory = () => {
-    // Here you would typically save to Firebase
-    console.log("Saving category:", formData);
-    handleCloseDialog();
-    // Refresh categories after save
-    // loadCategories();
+  const handleSaveCategory = async () => {
+    try {
+      setActionLoading(true);
+      if (selectedCategory) {
+        await updateCategory(selectedCategory.id, formData);
+      } else {
+        await createCategory(formData);
+      }
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Error saving category:", error);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleSaveSubcategory = () => {
-    // Here you would typically save to Firebase
-    console.log(
-      "Saving subcategory:",
-      formData,
-      "to category:",
-      selectedCategory
-    );
-    handleCloseDialog();
+  const handleSaveSubcategory = async () => {
+    try {
+      setActionLoading(true);
+      if (selectedSubcategory) {
+        await updateSubcategory(
+          selectedCategory.id,
+          selectedSubcategory.name,
+          formData.name
+        );
+      } else {
+        await createSubcategory(selectedCategory.id, formData.name);
+      }
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Error saving subcategory:", error);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleSaveTask = () => {
-    // Here you would typically save to Firebase
-    console.log("Saving task:", taskForm);
-    handleCloseDialog();
+  const handleSaveTask = async () => {
+    try {
+      setActionLoading(true);
+      await createTaskTemplate(
+        taskForm.categoryId,
+        taskForm.subcategoryName,
+        taskForm.name
+      );
+      handleCloseDialog();
+    } catch (error) {
+      console.error("Error saving task:", error);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleMenuOpen = (event, category) => {
@@ -135,15 +184,52 @@ const CategoryManager = () => {
     setSelectedCategory(null);
   };
 
-  const handleDeleteCategory = () => {
-    if (
-      selectedCategory &&
-      window.confirm("Are you sure you want to delete this category?")
-    ) {
-      // Here you would delete from Firebase
-      console.log("Deleting category:", selectedCategory);
+  const handleDeleteCategory = async () => {
+    try {
+      setActionLoading(true);
+      await deleteCategory(selectedCategory.id);
+      handleMenuClose();
+    } catch (error) {
+      console.error("Error deleting category:", error);
+    } finally {
+      setActionLoading(false);
+      setConfirmOpen(false);
     }
-    handleMenuClose();
+  };
+
+  const handleDeleteSubcategory = async (category, subcategory) => {
+    try {
+      setActionLoading(true);
+      await deleteSubcategory(category.id, subcategory.name);
+    } catch (error) {
+      console.error("Error deleting subcategory:", error);
+    } finally {
+      setActionLoading(false);
+      setConfirmOpen(false);
+    }
+  };
+
+  const handleDeleteTask = async (category, subcategory, taskIndex) => {
+    try {
+      setActionLoading(true);
+      await deleteTaskTemplate(category.id, subcategory.name, taskIndex);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    } finally {
+      setActionLoading(false);
+      setConfirmOpen(false);
+    }
+  };
+
+  const showConfirmation = (action) => {
+    setConfirmAction(action);
+    setConfirmOpen(true);
+  };
+
+  const executeConfirmedAction = () => {
+    if (confirmAction) {
+      confirmAction.action(...confirmAction.params);
+    }
   };
 
   const getTotalTasks = (category) => {
@@ -157,6 +243,17 @@ const CategoryManager = () => {
   return (
     <Fade in={true} timeout={600}>
       <Box>
+        <ConfirmationDialog
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={executeConfirmedAction}
+          title={confirmAction?.title || "Confirm Action"}
+          message={
+            confirmAction?.message ||
+            "Are you sure you want to perform this action?"
+          }
+          loading={actionLoading}
+        />
         <Box
           sx={{
             display: "flex",
@@ -195,10 +292,12 @@ const CategoryManager = () => {
               textTransform: "none",
               fontWeight: 600,
             }}
+            disabled={projectLoading}
           >
             New Category
           </Button>
         </Box>
+
         <Paper
           elevation={0}
           sx={{
@@ -207,13 +306,13 @@ const CategoryManager = () => {
             borderRadius: 3,
             background:
               "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
-            border: "1px solid rgba(139, 126, 200, 0.1)",
+            border: `1px solid ${theme.palette.divider}`,
           }}
         >
           <Typography variant="h6" gutterBottom>
             Categories Overview
           </Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid item xs={6} sm={3}>
               <Box
                 sx={{
@@ -221,13 +320,14 @@ const CategoryManager = () => {
                   p: 2,
                   borderRadius: 2,
                   backgroundColor: "white",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Typography variant="h3" fontWeight={700} color="primary">
                   {categories.length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Categories
+                  Total Categories
                 </Typography>
               </Box>
             </Grid>
@@ -238,12 +338,13 @@ const CategoryManager = () => {
                   p: 2,
                   borderRadius: 2,
                   backgroundColor: "white",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Typography
                   variant="h3"
                   fontWeight={700}
-                  sx={{ color: "#A8E6CF" }}
+                  sx={{ color: "#4CAF50" }}
                 >
                   {categories.reduce(
                     (total, cat) => total + (cat.subcategories?.length || 0),
@@ -262,12 +363,13 @@ const CategoryManager = () => {
                   p: 2,
                   borderRadius: 2,
                   backgroundColor: "white",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Typography
                   variant="h3"
                   fontWeight={700}
-                  sx={{ color: "#FFD3A5" }}
+                  sx={{ color: "#FF9800" }}
                 >
                   {categories.reduce(
                     (total, cat) => total + getTotalTasks(cat),
@@ -286,12 +388,13 @@ const CategoryManager = () => {
                   p: 2,
                   borderRadius: 2,
                   backgroundColor: "white",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Typography
                   variant="h3"
                   fontWeight={700}
-                  sx={{ color: "#A5C9FF" }}
+                  sx={{ color: "#2196F3" }}
                 >
                   {Math.round(
                     categories.reduce(
@@ -307,7 +410,12 @@ const CategoryManager = () => {
             </Grid>
           </Grid>
         </Paper>
-        {categories.length === 0 ? (
+
+        {projectLoading && categories.length === 0 ? (
+          <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : categories.length === 0 ? (
           <Paper
             elevation={0}
             sx={{
@@ -316,7 +424,7 @@ const CategoryManager = () => {
               borderRadius: 3,
               background:
                 "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
-              border: "1px solid rgba(139, 126, 200, 0.1)",
+              border: `1px solid ${theme.palette.divider}`,
             }}
           >
             <Category
@@ -357,216 +465,247 @@ const CategoryManager = () => {
           <Grid container spacing={3}>
             {categories.map((category) => (
               <Grid item xs={12} key={category.id || category.name}>
-                <Card
+                <Accordion
+                  expanded={expandedCategory === category.id}
+                  onChange={() =>
+                    setExpandedCategory(
+                      expandedCategory === category.id ? null : category.id
+                    )
+                  }
                   elevation={0}
                   sx={{
+                    "&:before": { display: "none" },
                     borderRadius: 3,
-                    border: "1px solid rgba(139, 126, 200, 0.1)",
-                    overflow: "visible",
+                    border: `1px solid ${theme.palette.divider}`,
                   }}
                 >
-                  <CardContent sx={{ p: 0 }}>
-                    <Accordion
-                      expanded={expandedCategory === category.id}
-                      onChange={() =>
-                        setExpandedCategory(
-                          expandedCategory === category.id ? null : category.id
-                        )
-                      }
-                      elevation={0}
+                  <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    sx={{
+                      p: 3,
+                      "& .MuiAccordionSummary-content": {
+                        alignItems: "center",
+                      },
+                    }}
+                  >
+                    <Box
                       sx={{
-                        "&:before": { display: "none" },
-                        borderRadius: 3,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        flex: 1,
                       }}
                     >
-                      <AccordionSummary
-                        expandIcon={<ExpandMore />}
+                      <Box
                         sx={{
-                          p: 3,
-                          "& .MuiAccordionSummary-content": {
-                            alignItems: "center",
-                          },
+                          width: 40,
+                          height: 40,
+                          borderRadius: "50%",
+                          color: category.color,
+                          backgroundColor: category.color,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            flex: 1,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: "50%",
-                              backgroundColor: category.color,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Category sx={{ color: "white", fontSize: 20 }} />
-                          </Box>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="h6" fontWeight={600}>
-                              {category.name}
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 2, mt: 0.5 }}>
-                              <Chip
-                                label={`${
-                                  category.subcategories?.length || 0
-                                } subcategories`}
-                                size="small"
-                                variant="outlined"
-                                sx={{
-                                  borderColor: category.color,
-                                  color: category.color,
-                                }}
-                              />
-                              <Chip
-                                label={`${getTotalTasks(category)} tasks`}
-                                size="small"
-                                sx={{
-                                  backgroundColor: `${category.color}20`,
-                                  color: category.color,
-                                }}
-                              />
-                            </Box>
-                          </Box>
-                          <IconButton
-                            onClick={(e) => handleMenuOpen(e, category)}
-                            sx={{ opacity: 0.7, "&:hover": { opacity: 1 } }}
-                          >
-                            <MoreVert />
-                          </IconButton>
-                        </Box>
-                      </AccordionSummary>
-                      <AccordionDetails sx={{ p: 0, pt: 0 }}>
-                        <Divider />
-                        <Box sx={{ p: 3 }}>
-                          {category.subcategories?.map((subcategory) => (
-                            <Card
-                              key={subcategory.name}
-                              elevation={0}
-                              sx={{
-                                mb: 2,
-                                border: `1px solid ${category.color}30`,
-                                borderRadius: 2,
-                              }}
-                            >
-                              <CardContent sx={{ p: 2 }}>
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    mb: 2,
-                                  }}
-                                >
-                                  <Typography
-                                    variant="subtitle1"
-                                    fontWeight={600}
-                                  >
-                                    {subcategory.name}
-                                  </Typography>
-                                  <Box sx={{ display: "flex", gap: 1 }}>
-                                    <Button
-                                      size="small"
-                                      startIcon={<Add />}
-                                      onClick={() =>
-                                        handleOpenDialog(
-                                          "task",
-                                          category,
-                                          subcategory
-                                        )
-                                      }
-                                      sx={{ textTransform: "none" }}
-                                    >
-                                      Add Task
-                                    </Button>
-                                    <Button
-                                      size="small"
-                                      startIcon={<Edit />}
-                                      onClick={() =>
-                                        handleOpenDialog(
-                                          "subcategory",
-                                          category,
-                                          subcategory
-                                        )
-                                      }
-                                      sx={{ textTransform: "none" }}
-                                    >
-                                      Edit
-                                    </Button>
-                                  </Box>
-                                </Box>
-                                {subcategory.tasks &&
-                                subcategory.tasks.length > 0 ? (
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      flexWrap: "wrap",
-                                      gap: 1,
-                                    }}
-                                  >
-                                    {subcategory.tasks.map(
-                                      (task, taskIndex) => (
-                                        <Chip
-                                          key={taskIndex}
-                                          label={task}
-                                          size="small"
-                                          variant="outlined"
-                                          sx={{
-                                            borderColor: `${category.color}50`,
-                                            color: category.color,
-                                            backgroundColor: `${category.color}10`,
-                                          }}
-                                        />
-                                      )
-                                    )}
-                                  </Box>
-                                ) : (
-                                  <Typography
-                                    variant="body2"
-                                    color="text.secondary"
-                                    sx={{ fontStyle: "italic" }}
-                                  >
-                                    No tasks in this subcategory
-                                  </Typography>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
-                          <Button
-                            fullWidth
+                        <Category sx={{ color: "white", fontSize: 20 }} />
+                      </Box>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" fontWeight={600}>
+                          {category.name}
+                        </Typography>
+                        <Box sx={{ display: "flex", gap: 2, mt: 0.5 }}>
+                          <Chip
+                            label={`${
+                              category.subcategories?.length || 0
+                            } subcategories`}
+                            size="small"
                             variant="outlined"
-                            startIcon={<Add />}
-                            onClick={() =>
-                              handleOpenDialog("subcategory", category)
-                            }
                             sx={{
-                              mt: 2,
                               borderColor: category.color,
                               color: category.color,
-                              "&:hover": {
-                                borderColor: category.color,
-                                backgroundColor: `${category.color}10`,
-                              },
                             }}
-                          >
-                            Add Subcategory
-                          </Button>
+                          />
+                          <Chip
+                            label={`${getTotalTasks(category)} tasks`}
+                            size="small"
+                            sx={{
+                              backgroundColor: `${category.color}20`,
+                              color: category.color,
+                            }}
+                          />
                         </Box>
-                      </AccordionDetails>
-                    </Accordion>
-                  </CardContent>
-                </Card>
+                      </Box>
+                      <IconButton
+                        onClick={(e) => handleMenuOpen(e, category)}
+                        disabled={projectLoading || actionLoading}
+                      >
+                        <MoreVert />
+                      </IconButton>
+                    </Box>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ p: 0, pt: 0 }}>
+                    <Divider />
+                    <Box sx={{ p: 3 }}>
+                      {category.subcategories?.map((subcategory) => (
+                        <Card
+                          key={subcategory.name}
+                          elevation={0}
+                          sx={{
+                            mb: 2,
+                            border: `1px solid ${category.color}`,
+                            borderRadius: 2,
+                          }}
+                        >
+                          <CardContent sx={{ p: 2 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mb: 2,
+                              }}
+                            >
+                              <Typography variant="subtitle1" fontWeight={600}>
+                                {subcategory.name}
+                              </Typography>
+                              <Box sx={{ display: "flex", gap: 1 }}>
+                                <Button
+                                  size="small"
+                                  startIcon={<Add />}
+                                  variant="contained"
+                                  onClick={() =>
+                                    handleOpenDialog(
+                                      "task",
+                                      category,
+                                      subcategory
+                                    )
+                                  }
+                                  sx={{
+                                    borderRadius: 2,
+                                    textTransform: "none",
+                                  }}
+                                  disabled={projectLoading || actionLoading}
+                                >
+                                  Add Task
+                                </Button>
+                                <Button
+                                  size="small"
+                                  startIcon={<Edit />}
+                                  variant="contained"
+                                  onClick={() =>
+                                    handleOpenDialog(
+                                      "subcategory",
+                                      category,
+                                      subcategory
+                                    )
+                                  }
+                                  sx={{
+                                    borderRadius: 2,
+                                    textTransform: "none",
+                                  }}
+                                  disabled={projectLoading || actionLoading}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="small"
+                                  startIcon={<Delete />}
+                                  variant="outlined"
+                                  color="error"
+                                  onClick={() =>
+                                    showConfirmation({
+                                      action: handleDeleteSubcategory,
+                                      params: [category, subcategory],
+                                      title: "Delete Subcategory",
+                                      message: `Are you sure you want to delete the subcategory "${subcategory.name}" and all its tasks?`,
+                                    })
+                                  }
+                                  sx={{
+                                    borderRadius: 2,
+                                    textTransform: "none",
+                                  }}
+                                  disabled={projectLoading || actionLoading}
+                                >
+                                  Delete
+                                </Button>
+                              </Box>
+                            </Box>
+                            {subcategory.tasks &&
+                            subcategory.tasks.length > 0 ? (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 1,
+                                }}
+                              >
+                                {subcategory.tasks.map((task, taskIndex) => (
+                                  <Chip
+                                    key={taskIndex}
+                                    label={task}
+                                    size="small"
+                                    variant="outlined"
+                                    onDelete={() =>
+                                      showConfirmation({
+                                        action: handleDeleteTask,
+                                        params: [
+                                          category,
+                                          subcategory,
+                                          taskIndex,
+                                        ],
+                                        title: "Delete Task Template",
+                                        message: `Are you sure you want to delete the task template "${task}"?`,
+                                      })
+                                    }
+                                    sx={{
+                                      borderColor: `${category.color}`,
+                                      color: category.color,
+                                      backgroundColor: `${category.color}10`,
+                                    }}
+                                  />
+                                ))}
+                              </Box>
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ fontStyle: "italic" }}
+                              >
+                                No tasks in this subcategory
+                              </Typography>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        startIcon={<Add />}
+                        onClick={() =>
+                          handleOpenDialog("subcategory", category)
+                        }
+                        sx={{
+                          mt: 2,
+                          borderColor: category.color,
+                          color: category.color,
+                          "&:hover": {
+                            borderColor: category.color,
+                            backgroundColor: `${category.color}10`,
+                          },
+                        }}
+                        disabled={projectLoading || actionLoading}
+                      >
+                        Add Subcategory
+                      </Button>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
               </Grid>
             ))}
           </Grid>
         )}
+
         <Menu
           anchorEl={menuAnchorEl}
           open={Boolean(menuAnchorEl)}
@@ -580,6 +719,7 @@ const CategoryManager = () => {
               handleOpenDialog("category", selectedCategory);
               handleMenuClose();
             }}
+            disabled={actionLoading}
           >
             <Edit fontSize="small" sx={{ mr: 1 }} />
             Edit Category
@@ -589,15 +729,28 @@ const CategoryManager = () => {
               handleOpenDialog("subcategory", selectedCategory);
               handleMenuClose();
             }}
+            disabled={actionLoading}
           >
             <Add fontSize="small" sx={{ mr: 1 }} />
             Add Subcategory
           </MenuItem>
-          <MenuItem onClick={handleDeleteCategory} sx={{ color: "error.main" }}>
+          <MenuItem
+            onClick={() => {
+              showConfirmation({
+                action: handleDeleteCategory,
+                title: "Delete Category",
+                message: `Are you sure you want to delete the category "${selectedCategory?.name}" and all its contents?`,
+              });
+              handleMenuClose();
+            }}
+            sx={{ color: "error.main" }}
+            disabled={actionLoading}
+          >
             <Delete fontSize="small" sx={{ mr: 1 }} />
             Delete Category
           </MenuItem>
         </Menu>
+
         <Dialog
           open={dialogOpen}
           onClose={handleCloseDialog}
@@ -607,7 +760,8 @@ const CategoryManager = () => {
           <DialogTitle>
             {dialogType === "category" &&
               (selectedCategory ? "Edit Category" : "New Category")}
-            {dialogType === "subcategory" && "Add Subcategory"}
+            {dialogType === "subcategory" &&
+              (selectedSubcategory ? "Edit Subcategory" : "New Subcategory")}
             {dialogType === "task" && "Add Task Template"}
           </DialogTitle>
 
@@ -622,6 +776,7 @@ const CategoryManager = () => {
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
                   sx={{ mb: 3, mt: 1 }}
+                  disabled={actionLoading}
                 />
                 {dialogType === "category" && (
                   <>
@@ -667,6 +822,7 @@ const CategoryManager = () => {
                       }
                       multiline
                       rows={3}
+                      disabled={actionLoading}
                     />
                   </>
                 )}
@@ -682,11 +838,14 @@ const CategoryManager = () => {
                 }
                 sx={{ mt: 1 }}
                 placeholder="Enter task template name..."
+                disabled={actionLoading}
               />
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancel</Button>
+            <Button onClick={handleCloseDialog} disabled={actionLoading}>
+              Cancel
+            </Button>
             <Button
               variant="contained"
               onClick={
@@ -697,14 +856,32 @@ const CategoryManager = () => {
                   : handleSaveTask
               }
               disabled={
-                dialogType === "category" || dialogType === "subcategory"
+                actionLoading ||
+                (dialogType === "category" || dialogType === "subcategory"
                   ? !formData.name.trim()
-                  : !taskForm.name.trim()
+                  : !taskForm.name.trim())
               }
+              startIcon={actionLoading ? <CircularProgress size={20} /> : null}
             >
-              {selectedCategory && dialogType === "category"
+              {actionLoading
+                ? dialogType === "category" && selectedCategory
+                  ? "Updating..."
+                  : dialogType === "category"
+                  ? "Creating..."
+                  : dialogType === "subcategory" && selectedSubcategory
+                  ? "Updating..."
+                  : dialogType === "subcategory"
+                  ? "Creating..."
+                  : "Saving..."
+                : dialogType === "category" && selectedCategory
                 ? "Update"
-                : "Create"}
+                : dialogType === "category"
+                ? "Create"
+                : dialogType === "subcategory" && selectedSubcategory
+                ? "Update"
+                : dialogType === "subcategory"
+                ? "Create"
+                : "Add Task"}
             </Button>
           </DialogActions>
         </Dialog>

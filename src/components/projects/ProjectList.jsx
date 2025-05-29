@@ -28,11 +28,11 @@ import ProjectCard from "./ProjectCard";
 import useProject from "../../hooks/useProject";
 
 const statusOptions = [
-  { value: "all", label: "All Projects", color: "default" },
-  { value: "planning", label: "Planning", color: "info" },
-  { value: "in-progress", label: "In Progress", color: "warning" },
-  { value: "completed", label: "Completed", color: "success" },
-  { value: "on-hold", label: "On Hold", color: "error" },
+  { value: "all", label: "All Projects", color: "#607D8B" },
+  { value: "planning", label: "Planning", color: "#2196F3" },
+  { value: "in-progress", label: "In Progress", color: "#FFC107" },
+  { value: "completed", label: "Completed", color: "#4CAF50" },
+  { value: "on-hold", label: "On Hold", color: "#F44336" },
 ];
 
 const ProjectList = () => {
@@ -42,8 +42,6 @@ const ProjectList = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-
-  console.log("----projects----->", projects);
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch =
@@ -134,7 +132,7 @@ const ProjectList = () => {
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => navigate("/create-project")}
+            onClick={() => navigate("/projects/create")}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -247,7 +245,7 @@ const ProjectList = () => {
                           height: 20,
                           fontSize: "0.75rem",
                           backgroundColor: "rgba(139, 126, 200, 0.1)",
-                          color: "#8B7EC8",
+                          color: option.color,
                         }}
                       />
                     </Box>
@@ -306,7 +304,7 @@ const ProjectList = () => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => navigate("/create-project")}
+                onClick={() => navigate("/projects/create")}
                 sx={{
                   borderRadius: 2,
                   px: 4,

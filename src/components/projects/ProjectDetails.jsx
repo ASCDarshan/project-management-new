@@ -61,16 +61,16 @@ import useProject from "../../hooks/useProject";
 import { stringToColor } from "../../helpers/stringToColor";
 
 const statusOptions = [
-  { value: "planning", label: "Planning", color: "#A5C9FF" },
-  { value: "in-progress", label: "In Progress", color: "#FFD3A5" },
-  { value: "completed", label: "Completed", color: "#A8E6CF" },
-  { value: "on-hold", label: "On Hold", color: "#FFAAA5" },
+  { value: "planning", label: "Planning", color: "#64B5F6" },
+  { value: "in-progress", label: "In Progress", color: "#FFB74D" },
+  { value: "completed", label: "Completed", color: "#81C784" },
+  { value: "on-hold", label: "On Hold", color: "#BDBDBD" },
 ];
 
 const priorityOptions = [
-  { value: "low", label: "Low", color: "#A8E6CF" },
-  { value: "medium", label: "Medium", color: "#FFD3A5" },
-  { value: "high", label: "High", color: "#FFAAA5" },
+  { value: "low", label: "Low", color: "#6BBF6B" },
+  { value: "medium", label: "Medium", color: "#FFD700" },
+  { value: "high", label: "High", color: "#DC3545" },
 ];
 
 const ProjectDetails = () => {
@@ -536,7 +536,6 @@ const ProjectDetails = () => {
               </Box>
               <Box sx={{ p: 3 }}>
                 {tabValue === 0 && (
-                  // Overview Tab Content (Unchanged)
                   <Box>
                     <Typography
                       variant="subtitle1"
@@ -736,7 +735,7 @@ const ProjectDetails = () => {
                                     sx={{
                                       color:
                                         task.status === "completed"
-                                          ? "#A8E6CF"
+                                          ? getStatusColor("completed")
                                           : "text.disabled",
                                     }}
                                   />
@@ -774,7 +773,11 @@ const ProjectDetails = () => {
                                   }}
                                 >
                                   <Chip
-                                    label={task.status}
+                                    label={
+                                      statusOptions.find(
+                                        (opt) => opt.value === task.status
+                                      )?.label || task.status
+                                    }
                                     size="small"
                                     sx={{
                                       height: 20,
@@ -786,7 +789,11 @@ const ProjectDetails = () => {
                                     }}
                                   />
                                   <Chip
-                                    label={task.priority}
+                                    label={
+                                      priorityOptions.find(
+                                        (opt) => opt.value === task.priority
+                                      )?.label || task.priority
+                                    }
                                     size="small"
                                     sx={{
                                       height: 20,
@@ -994,25 +1001,25 @@ const ProjectDetails = () => {
                       label: "Total Tasks",
                       value: projectTasks.length,
                       icon: <DonutLarge />,
-                      color: "primary",
+                      color: theme.palette.primary.main,
                     },
                     {
                       label: "Completed",
                       value: getTasksByStatus("completed").length,
                       icon: <CheckCircleOutline />,
-                      color: "success",
+                      color: "#81C784",
                     },
                     {
                       label: "In Progress",
                       value: getTasksByStatus("in-progress").length,
                       icon: <Cached />,
-                      color: "warning",
+                      color: "#FFB74D",
                     },
                     {
                       label: "Pending",
                       value: getTasksByStatus("pending").length,
                       icon: <HourglassEmpty />,
-                      color: "info",
+                      color: "#64B5F6",
                     },
                   ].map((stat) => (
                     <Grid item xs={6} key={stat.label}>
@@ -1022,29 +1029,22 @@ const ProjectDetails = () => {
                           p: 2,
                           borderRadius: 3,
                           textAlign: "left",
-                          backgroundColor:
-                            theme.palette[stat.color].light + "40",
-                          border: `1px solid ${
-                            theme.palette[stat.color].light + "80"
-                          }`,
+                          backgroundColor: stat.color + "20",
+                          border: `1px solid ${stat.color + "60"}`,
                         }}
                       >
-                        <Box
-                          sx={{ color: theme.palette[stat.color].dark, mb: 1 }}
-                        >
-                          {stat.icon}
-                        </Box>
+                        <Box sx={{ color: stat.color, mb: 1 }}>{stat.icon}</Box>
                         <Typography
                           variant="h5"
                           fontWeight={700}
-                          sx={{ color: theme.palette[stat.color].dark }}
+                          sx={{ color: stat.color }}
                         >
                           {stat.value}
                         </Typography>
                         <Typography
                           variant="caption"
                           sx={{
-                            color: theme.palette[stat.color].dark,
+                            color: stat.color,
                             fontWeight: 500,
                           }}
                         >

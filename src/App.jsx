@@ -42,9 +42,9 @@ function App() {
                 >
                   <Route index element={<Navigate to="/projects" replace />} />
                   <Route path="projects" element={<ProjectList />} />
-                  <Route path="create-project" element={<CreateProject />} />
-                  <Route path="project/:id" element={<ProjectDetails />} />
-                  <Route path="project/:id/edit" element={<CreateProject />} />
+                  <Route path="projects/create" element={<CreateProject />} />
+                  <Route path="projects/:id" element={<ProjectDetails />} />
+                  <Route path="projects/:id/edit" element={<CreateProject />} />
                   <Route path="tasks" element={<TaskList />} />
                   <Route path="categories" element={<CategoryManager />} />
                   <Route path="employees" element={<EmployeeList />} />
