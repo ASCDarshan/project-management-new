@@ -365,6 +365,26 @@ export const ProjectProvider = ({ children }) => {
     }
   };
 
+  const updateCategory = async (categoryId, updateData) => {
+    try {
+      await firebaseService.updateCategory(categoryId, updateData);
+      await loadCategories();
+    } catch (error) {
+      setError("Failed to update category");
+      throw error;
+    }
+  };
+
+  const deleteCategory = async (categoryId) => {
+    try {
+      await firebaseService.deleteCategory(categoryId);
+      await loadCategories();
+    } catch (error) {
+      setError("Failed to delete category");
+      throw error;
+    }
+  };
+
   const getProjectById = (projectId) => {
     return projects.find((project) => project.id === projectId);
   };
@@ -403,26 +423,39 @@ export const ProjectProvider = ({ children }) => {
     employees,
     loading,
     error,
+
     createProject,
     updateProject,
     deleteProject,
+
     getProjectById,
     getProjectProgress,
+    getProjectsByEmployee,
+
     createTask,
     updateTask,
     deleteTask,
+
     getTasksByProject,
     getTasksByEmployee,
     getTasksByStatus,
+
     createEmployee,
     updateEmployee,
     deleteEmployee,
-    getProjectsByEmployee,
+
     createCategory,
+    updateCategory,
+    deleteCategory,
+
     loadProjects,
+
     loadTasks,
+
     loadEmployees,
+
     loadCategories,
+
     defaultCategories,
   };
 
