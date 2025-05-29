@@ -63,16 +63,16 @@ const steps = [
 ];
 
 const statusOptions = [
-  { value: "planning", label: "Planning", color: "#A5C9FF" },
-  { value: "in-progress", label: "In Progress", color: "#FFD3A5" },
-  { value: "completed", label: "Completed", color: "#A8E6CF" },
-  { value: "on-hold", label: "On Hold", color: "#FFAAA5" },
+  { value: "planning", label: "Planning", color: "#64B5F6" },
+  { value: "in-progress", label: "In Progress", color: "#FFB74D" },
+  { value: "completed", label: "Completed", color: "#81C784" },
+  { value: "on-hold", label: "On Hold", color: "#BDBDBD" },
 ];
 
 const priorityOptions = [
-  { value: "low", label: "Low", color: "#A8E6CF" },
-  { value: "medium", label: "Medium", color: "#FFD3A5" },
-  { value: "high", label: "High", color: "#FFAAA5" },
+  { value: "low", label: "Low", color: "#6BBF6B" },
+  { value: "medium", label: "Medium", color: "#FFD700" },
+  { value: "high", label: "High", color: "#DC3545" },
 ];
 
 const CreateProject = () => {

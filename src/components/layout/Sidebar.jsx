@@ -38,26 +38,26 @@ const menuItems = [
     color: "#8B7EC8",
     subItems: [
       { text: "All Projects", path: "/projects" },
-      { text: "Create Project", path: "/create-project" },
+      { text: "Create Project", path: "/projects/create" },
     ],
   },
   {
     text: "Tasks",
     icon: <Assignment />,
     path: "/tasks",
-    color: "#A8E6CF",
+    color: "#8B7EC8",
   },
   {
     text: "Categories",
     icon: <Category />,
     path: "/categories",
-    color: "#FFD3A5",
+    color: "#8B7EC8",
   },
   {
     text: "Team",
     icon: <People />,
     path: "/employees",
-    color: "#B5A9D6",
+    color: "#8B7EC8",
   },
 ];
 
@@ -65,7 +65,7 @@ const quickActions = [
   {
     text: "New Project",
     icon: <Add />,
-    path: "/create-project",
+    path: "/projects/create",
     color: "#8B7EC8",
   },
 ];

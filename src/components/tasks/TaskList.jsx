@@ -13,16 +13,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Card,
-  CardContent,
-  CardActions,
   IconButton,
   Menu,
-  Avatar,
   LinearProgress,
-  Divider,
-  Tabs,
-  Tab,
   List,
   ListItem,
   ListItemIcon,
@@ -52,18 +45,18 @@ import {
 import useProject from "../../hooks/useProject";
 
 const statusOptions = [
-  { value: "all", label: "All Tasks", color: "default" },
-  { value: "pending", label: "Pending", color: "#A5C9FF" },
-  { value: "in-progress", label: "In Progress", color: "#FFD3A5" },
-  { value: "completed", label: "Completed", color: "#A8E6CF" },
-  { value: "blocked", label: "Blocked", color: "#FFAAA5" },
+  { value: "all", label: "All Tasks", color: "#9E9E9E" },
+  { value: "pending", label: "Pending", color: "#64B5F6" },
+  { value: "in-progress", label: "In Progress", color: "#FFB74D" },
+  { value: "completed", label: "Completed", color: "#81C784" },
+  { value: "blocked", label: "Blocked", color: "#E57373" },
 ];
 
 const priorityOptions = [
-  { value: "all", label: "All Priorities", color: "default" },
-  { value: "low", label: "Low", color: "#A8E6CF" },
-  { value: "medium", label: "Medium", color: "#FFD3A5" },
-  { value: "high", label: "High", color: "#FFAAA5" },
+  { value: "all", label: "All Priorities", color: "#9E9E9E" },
+  { value: "low", label: "Low", color: "#81C784" },
+  { value: "medium", label: "Medium", color: "#FFD54F" },
+  { value: "high", label: "High", color: "#FFB74D" },
 ];
 
 const TaskList = () => {
@@ -79,16 +72,19 @@ const TaskList = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
+    id: "",
     name: "",
     description: "",
     status: "",
     priority: "",
+    projectId: "",
+    category: "",
   });
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [submittingState, setSubmittingState] = useState({
     saving: false,
     deleting: false,
-    updating: null, // will store the id of the task being updated
+    updating: null,
   });
 
   const filteredAndSortedTasks = useMemo(() => {
@@ -108,7 +104,6 @@ const TaskList = () => {
       );
     });
 
-    // Sort tasks
     switch (sortBy) {
       case "name":
         filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
@@ -124,7 +119,7 @@ const TaskList = () => {
       case "status":
         filtered.sort((a, b) => (a.status || "").localeCompare(b.status || ""));
         break;
-      default: // recent
+      default:
         filtered.sort((a, b) => {
           const dateA = a.createdAt?.toDate
             ? a.createdAt.toDate()
@@ -166,15 +161,16 @@ const TaskList = () => {
 
   const handleEditTask = () => {
     if (selectedTask) {
-      setSubmittingState((prev) => ({ ...prev, saving: true }));
       setEditForm({
+        id: selectedTask.id || "",
         name: selectedTask.name || "",
         description: selectedTask.description || "",
         status: selectedTask.status || "pending",
         priority: selectedTask.priority || "medium",
+        projectId: selectedTask.projectId || "",
+        category: selectedTask.category || "",
       });
       setEditDialogOpen(true);
-      setSubmittingState((prev) => ({ ...prev, saving: false }));
     }
     handleMenuClose();
   };
@@ -206,10 +202,16 @@ const TaskList = () => {
   };
 
   const handleSaveEdit = async () => {
-    if (selectedTask) {
+    if (editForm.id) {
       setSubmittingState((prev) => ({ ...prev, saving: true }));
       try {
-        await updateTask(selectedTask.id, editForm);
+        await updateTask(editForm.id, {
+          name: editForm.name,
+          description: editForm.description,
+          status: editForm.status,
+          priority: editForm.priority,
+          projectId: editForm.projectId,
+        });
         setEditDialogOpen(false);
         setSelectedTask(null);
       } catch (error) {
@@ -286,7 +288,7 @@ const TaskList = () => {
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => navigate("/create-project")}
+            onClick={() => navigate("/projects/create")}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -339,9 +341,30 @@ const TaskList = () => {
                   label="Status"
                   onChange={(e) => setFilterStatus(e.target.value)}
                   sx={{ backgroundColor: "white", borderRadius: 2 }}
+                  renderValue={(selected) => {
+                    const selectedOption = statusOptions.find(
+                      (option) => option.value === selected
+                    );
+                    return (
+                      <span
+                        style={{ color: selectedOption?.color || "#E6E6FA" }}
+                      >
+                        {selectedOption?.label || "Select Status"}
+                      </span>
+                    );
+                  }}
                 >
                   {statusOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <MenuItem
+                      key={option.value}
+                      value={option.value}
+                      sx={{
+                        color:
+                          option.value === "all"
+                            ? "text.primary"
+                            : option.color,
+                      }}
+                    >
                       {option.label}
                     </MenuItem>
                   ))}
@@ -356,9 +379,30 @@ const TaskList = () => {
                   label="Priority"
                   onChange={(e) => setFilterPriority(e.target.value)}
                   sx={{ backgroundColor: "white", borderRadius: 2 }}
+                  renderValue={(selected) => {
+                    const selectedOption = priorityOptions.find(
+                      (option) => option.value === selected
+                    );
+                    return (
+                      <span
+                        style={{ color: selectedOption?.color || "#E6E6FA" }}
+                      >
+                        {selectedOption?.label || "Select Priority"}
+                      </span>
+                    );
+                  }}
                 >
                   {priorityOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <MenuItem
+                      key={option.value}
+                      value={option.value}
+                      sx={{
+                        color:
+                          option.value === "all"
+                            ? "text.primary"
+                            : option.color,
+                      }}
+                    >
                       {option.label}
                     </MenuItem>
                   ))}
@@ -430,7 +474,7 @@ const TaskList = () => {
                 <Typography
                   variant="h4"
                   fontWeight={700}
-                  sx={{ color: "#FFD3A5" }}
+                  sx={{ color: getStatusColor("in-progress") }}
                 >
                   {getTasksByStatus("in-progress")}
                 </Typography>
@@ -451,7 +495,7 @@ const TaskList = () => {
                 <Typography
                   variant="h4"
                   fontWeight={700}
-                  sx={{ color: "#A8E6CF" }}
+                  sx={{ color: getStatusColor("completed") }}
                 >
                   {getTasksByStatus("completed")}
                 </Typography>
@@ -472,7 +516,8 @@ const TaskList = () => {
                 <Typography
                   variant="h4"
                   fontWeight={700}
-                  sx={{ color: "#A5C9FF" }}
+                  // Use getStatusColor to fetch the standard color for 'pending'
+                  sx={{ color: getStatusColor("pending") }}
                 >
                   {getTasksByStatus("pending")}
                 </Typography>
@@ -521,7 +566,7 @@ const TaskList = () => {
               <Button
                 variant="contained"
                 startIcon={<Add />}
-                onClick={() => navigate("/create-project")}
+                onClick={() => navigate("/projects/create")}
                 sx={{
                   borderRadius: 2,
                   px: 4,
@@ -694,7 +739,8 @@ const TaskList = () => {
                             onClick={() =>
                               handleStatusChange(task.id, "completed")
                             }
-                            sx={{ color: "#A8E6CF" }}
+                            // Use getStatusColor for the 'completed' status
+                            sx={{ color: getStatusColor("completed") }}
                           >
                             <CheckCircle />
                           </IconButton>
@@ -705,7 +751,8 @@ const TaskList = () => {
                             onClick={() =>
                               handleStatusChange(task.id, "in-progress")
                             }
-                            sx={{ color: "#FFD3A5" }}
+                            // Use getStatusColor for the 'in-progress' status
+                            sx={{ color: getStatusColor("in-progress") }}
                           >
                             <PlayArrow />
                           </IconButton>
@@ -733,7 +780,7 @@ const TaskList = () => {
           }}
         >
           <MenuItem
-            onClick={() => navigate(`/project/${selectedTask?.projectId}`)}
+            onClick={() => navigate(`/projects/${selectedTask?.projectId}`)}
             sx={{ color: "#1976d2" }}
           >
             <Visibility fontSize="small" sx={{ mr: 1, color: "#1976d2" }} />
@@ -798,11 +845,30 @@ const TaskList = () => {
                         status: e.target.value,
                       }))
                     }
+                    renderValue={(selected) => {
+                      const selectedOption = statusOptions.find(
+                        (option) => option.value === selected
+                      );
+                      return (
+                        <span
+                          style={{ color: selectedOption?.color || "#E6E6FA" }}
+                        >
+                          {selectedOption?.label || "Select Status"}
+                        </span>
+                      );
+                    }}
                   >
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="in-progress">In Progress</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
-                    <MenuItem value="blocked">Blocked</MenuItem>
+                    {statusOptions
+                      .filter((opt) => opt.value !== "all")
+                      .map((option) => (
+                        <MenuItem
+                          key={option.value}
+                          value={option.value}
+                          sx={{ color: option.color }}
+                        >
+                          {option.label}
+                        </MenuItem>
+                      ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -818,14 +884,59 @@ const TaskList = () => {
                         priority: e.target.value,
                       }))
                     }
+                    renderValue={(selected) => {
+                      const selectedOption = priorityOptions.find(
+                        (option) => option.value === selected
+                      );
+                      return (
+                        <span
+                          style={{ color: selectedOption?.color || "#E6E6FA" }}
+                        >
+                          {selectedOption?.label || "Select Priority"}
+                        </span>
+                      );
+                    }}
                   >
-                    <MenuItem value="low">Low</MenuItem>
-                    <MenuItem value="medium">Medium</MenuItem>
-                    <MenuItem value="high">High</MenuItem>
+                    {priorityOptions
+                      .filter((opt) => opt.value !== "all")
+                      .map((option) => (
+                        <MenuItem
+                          key={option.value}
+                          value={option.value}
+                          sx={{ color: option.color }}
+                        >
+                          {option.label}
+                        </MenuItem>
+                      ))}
                   </Select>
                 </FormControl>
               </Grid>
             </Grid>
+            {projects.length > 0 && (
+              <FormControl
+                fullWidth
+                sx={{ mt: 2 }}
+                disabled={submittingState.saving}
+              >
+                <InputLabel>Project</InputLabel>
+                <Select
+                  value={editForm.projectId}
+                  label="Project"
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      projectId: e.target.value,
+                    }))
+                  }
+                >
+                  {projects.map((project) => (
+                    <MenuItem key={project.id} value={project.id}>
+                      {project.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </DialogContent>
           <DialogActions>
             <Button

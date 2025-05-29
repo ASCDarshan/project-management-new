@@ -66,25 +66,25 @@ const ProjectCard = ({ project }) => {
   const handleEdit = (event) => {
     event.stopPropagation();
     setAnchorEl(null);
-    navigate(`/project/${project.id}/edit`);
+    navigate(`/projects/${project.id}/edit`);
   };
 
   const handleView = (event) => {
     event.stopPropagation();
     setAnchorEl(null);
-    navigate(`/project/${project.id}`);
+    navigate(`/projects/${project.id}`);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "planning":
-        return "#A5C9FF";
+        return "#64B5F6";
       case "in-progress":
-        return "#FFD3A5";
+        return "#FFB74D";
       case "completed":
-        return "#A8E6CF";
+        return "#81C784";
       case "on-hold":
-        return "#FFAAA5";
+        return "#BDBDBD";
       default:
         return "#E6E6FA";
     }

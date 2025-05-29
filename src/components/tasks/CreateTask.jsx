@@ -56,17 +56,17 @@ const steps = [
 ];
 
 const statusOptions = [
-  { value: "pending", label: "Pending", color: "#A5C9FF" },
-  { value: "in-progress", label: "In Progress", color: "#FFD3A5" },
-  { value: "completed", label: "Completed", color: "#A8E6CF" },
-  { value: "blocked", label: "Blocked", color: "#FFAAA5" },
+  { value: "pending", label: "Pending", color: "#64B5F6" },
+  { value: "in-progress", label: "In Progress", color: "#FFB74D" },
+  { value: "completed", label: "Completed", color: "#81C784" },
+  { value: "blocked", label: "Blocked", color: "#E57373" },
 ];
 
 const priorityOptions = [
-  { value: "low", label: "Low", color: "#A8E6CF" },
-  { value: "medium", label: "Medium", color: "#FFD3A5" },
-  { value: "high", label: "High", color: "#FFAAA5" },
-  { value: "urgent", label: "Urgent", color: "#FF6B6B" },
+  { value: "low", label: "Low", color: "#81C784" },
+  { value: "medium", label: "Medium", color: "#FFD54F" },
+  { value: "high", label: "High", color: "#FFB74D" },
+  { value: "urgent", label: "Urgent", color: "#E57373" },
 ];
 
 const tagSuggestions = [

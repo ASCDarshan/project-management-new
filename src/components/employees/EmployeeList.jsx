@@ -25,6 +25,9 @@ import {
   Badge,
   Fade,
   Skeleton,
+  useTheme,
+  useMediaQuery,
+  CircularProgress,
 } from "@mui/material";
 import {
   Add,
@@ -34,10 +37,10 @@ import {
   Delete,
   Email,
   Phone,
-  Work,
   Group,
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
+import ConfirmationDialog from "../ui/ConfirmationDialog"; // Assuming ConfirmationDialog is in the same directory
 
 const roleOptions = [
   { value: "all", label: "All Roles" },
@@ -47,6 +50,7 @@ const roleOptions = [
   { value: "analyst", label: "Business Analyst" },
   { value: "tester", label: "QA Tester" },
   { value: "devops", label: "DevOps Engineer" },
+  { value: "data_scientist", label: "Data Scientist" },
 ];
 
 const departmentOptions = [
@@ -56,7 +60,8 @@ const departmentOptions = [
   "Marketing",
   "Sales",
   "Operations",
-  "HR",
+  "Human Resources",
+  "Finance",
 ];
 
 const skillOptions = [
@@ -79,10 +84,24 @@ const skillOptions = [
   "Docker",
   "Kubernetes",
   "CI/CD",
+  "SQL",
+  "Machine Learning",
+  "Data Analysis",
 ];
 
 const EmployeeList = () => {
-  const { employees, projects, tasks, createEmployee, loading } = useProject();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const {
+    employees = [],
+    projects = [],
+    tasks = [],
+    createEmployee,
+    updateEmployee,
+    deleteEmployee,
+    loading,
+  } = useProject();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [dialogType, setDialogType] = useState("create");
@@ -98,11 +117,23 @@ const EmployeeList = () => {
     skills: [],
   });
 
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmDialogTitle, setConfirmDialogTitle] = useState("");
+  const [confirmDialogMessage, setConfirmDialogMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const filteredEmployees = employees.filter((employee) => {
+    const employeeName = employee.name?.toLowerCase() || "";
+    const employeeEmail = employee.email?.toLowerCase() || "";
+    const employeeRole = employee.role?.toLowerCase() || "";
+
     const matchesSearch =
-      employee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.role?.toLowerCase().includes(searchTerm.toLowerCase());
+      employeeName.includes(searchTerm.toLowerCase()) ||
+      employeeEmail.includes(searchTerm.toLowerCase()) ||
+      employeeRole.includes(searchTerm.toLowerCase());
+
     const matchesRole = filterRole === "all" || employee.role === filterRole;
     return matchesSearch && matchesRole;
   });
@@ -139,9 +170,9 @@ const EmployeeList = () => {
         department: "",
         skills: [],
       });
+      setSelectedEmployee(null);
     }
     setDialogOpen(true);
-    handleMenuClose();
   };
 
   const handleCloseDialog = () => {
@@ -162,24 +193,49 @@ const EmployeeList = () => {
       if (dialogType === "create") {
         await createEmployee(formData);
       } else {
-        // Update employee logic would go here
-        console.log("Update employee:", selectedEmployee.id, formData);
+        if (!selectedEmployee || !selectedEmployee.id) {
+          console.log("No employee selected or missing ID");
+          return;
+        }
+        setIsUpdating(true);
+        try {
+          await updateEmployee(selectedEmployee.id, formData);
+        } catch (error) {
+          console.log("Error updating employee:", error);
+        } finally {
+          setIsUpdating(false);
+        }
       }
       handleCloseDialog();
     } catch (error) {
-      console.error("Error saving employee:", error);
+      console.log("Error saving employee:", error);
     }
   };
 
-  const handleDeleteEmployee = () => {
-    if (
-      selectedEmployee &&
-      window.confirm("Are you sure you want to delete this employee?")
-    ) {
-      // Delete logic would go here
-      console.log("Delete employee:", selectedEmployee.id);
-    }
+  const handleDeleteClick = () => {
+    setConfirmDialogTitle("Confirm Deletion");
+    setConfirmDialogMessage(
+      `Are you sure you want to delete ${selectedEmployee.name}? This action cannot be undone.`
+    );
+    setConfirmAction(() => async () => {
+      setIsDeleting(true);
+      try {
+        await deleteEmployee(selectedEmployee.id);
+        handleMenuClose();
+      } catch (error) {
+        console.log("Error deleting employee:", error);
+      } finally {
+        setIsDeleting(false);
+        setConfirmDialogOpen(false);
+      }
+    });
+    setConfirmDialogOpen(true);
     handleMenuClose();
+  };
+
+  const handleCloseConfirmationDialog = () => {
+    setConfirmDialogOpen(false);
+    setConfirmAction(null);
   };
 
   const getEmployeeProjects = (employeeId) => {
@@ -193,15 +249,24 @@ const EmployeeList = () => {
   };
 
   const getRoleColor = (role) => {
-    const roleColors = {
-      developer: "#8B7EC8",
-      designer: "#B5A9D6",
-      manager: "#A8E6CF",
-      analyst: "#FFD3A5",
-      tester: "#FFAAA5",
-      devops: "#A5C9FF",
-    };
-    return roleColors[role] || "#E6E6FA";
+    switch (role) {
+      case "developer":
+        return theme.palette.primary.main;
+      case "designer":
+        return theme.palette.secondary.main;
+      case "manager":
+        return theme.palette.success.main;
+      case "analyst":
+        return theme.palette.warning.main;
+      case "tester":
+        return theme.palette.error.main;
+      case "devops":
+        return theme.palette.info.main;
+      case "data_scientist":
+        return "#00BCD4";
+      default:
+        return theme.palette.text.secondary;
+    }
   };
 
   const getInitials = (name) => {
@@ -239,9 +304,11 @@ const EmployeeList = () => {
         <Box
           sx={{
             display: "flex",
+            flexDirection: isMobile ? "column" : "row",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: isMobile ? "flex-start" : "center",
             mb: 4,
+            gap: 2,
           }}
         >
           <Box>
@@ -251,7 +318,7 @@ const EmployeeList = () => {
               gutterBottom
               sx={{
                 fontWeight: 700,
-                background: "linear-gradient(135deg, #8B7EC8, #6B5B95)",
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                 backgroundClip: "text",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
@@ -273,6 +340,11 @@ const EmployeeList = () => {
               py: 1.5,
               textTransform: "none",
               fontWeight: 600,
+              boxShadow: "0 4px 12px rgba(139, 126, 200, 0.3)",
+              "&:hover": {
+                boxShadow: "0 6px 20px rgba(139, 126, 200, 0.4)",
+                transform: "translateY(-2px)",
+              },
             }}
           >
             Add Team Member
@@ -281,12 +353,12 @@ const EmployeeList = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
-            mb: 3,
-            borderRadius: 3,
+            p: isMobile ? 1 : 2,
             background:
               "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
-            border: "1px solid rgba(139, 126, 200, 0.1)",
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 3,
+            mb: 4,
           }}
         >
           <Grid container spacing={2} alignItems="center">
@@ -299,14 +371,30 @@ const EmployeeList = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Search sx={{ color: "text.secondary" }} />
+                      <Search sx={{ color: theme.palette.text.secondary }} />
                     </InputAdornment>
                   ),
+                  sx: {
+                    borderRadius:
+                      theme.components?.MuiTextField?.styleOverrides?.root?.[
+                        "& .MuiOutlinedInput-root"
+                      ]?.borderRadius || theme.shape.borderRadius,
+                  },
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    backgroundColor: "white",
-                    borderRadius: 2,
+                    backgroundColor: theme.palette.background.paper,
+                    borderRadius:
+                      theme.components?.MuiTextField?.styleOverrides?.root?.[
+                        "& .MuiOutlinedInput-root"
+                      ]?.borderRadius || theme.shape.borderRadius,
+                    "&:hover fieldset": {
+                      borderColor: theme.palette.primary.light, // Highlight on hover
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: theme.palette.primary.main, // Highlight on focus
+                      borderWidth: "2px",
+                    },
                   },
                 }}
               />
@@ -318,7 +406,20 @@ const EmployeeList = () => {
                   value={filterRole}
                   label="Filter by Role"
                   onChange={(e) => setFilterRole(e.target.value)}
-                  sx={{ backgroundColor: "white", borderRadius: 2 }}
+                  sx={{
+                    backgroundColor: theme.palette.background.paper,
+                    borderRadius:
+                      theme.components?.MuiTextField?.styleOverrides?.root?.[
+                        "& .MuiOutlinedInput-root"
+                      ]?.borderRadius || theme.shape.borderRadius,
+                    "&:hover fieldset": {
+                      borderColor: theme.palette.primary.light,
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: theme.palette.primary.main,
+                      borderWidth: "2px",
+                    },
+                  }}
                 >
                   {roleOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
@@ -337,9 +438,10 @@ const EmployeeList = () => {
                   p: 2,
                   borderRadius: 2,
                   backgroundColor: "white",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
-                <Typography variant="h4" fontWeight={700} color="primary">
+                <Typography variant="h3" fontWeight={700} color="primary">
                   {employees.length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -354,12 +456,13 @@ const EmployeeList = () => {
                   p: 2,
                   borderRadius: 2,
                   backgroundColor: "white",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Typography
-                  variant="h4"
+                  variant="h3"
                   fontWeight={700}
-                  sx={{ color: "#A8E6CF" }}
+                  sx={{ color: "#4CAF50" }}
                 >
                   {employees.filter((emp) => emp.role === "developer").length}
                 </Typography>
@@ -375,12 +478,13 @@ const EmployeeList = () => {
                   p: 2,
                   borderRadius: 2,
                   backgroundColor: "white",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Typography
-                  variant="h4"
+                  variant="h3"
                   fontWeight={700}
-                  sx={{ color: "#FFD3A5" }}
+                  sx={{ color: "#FF9800" }}
                 >
                   {employees.filter((emp) => emp.role === "designer").length}
                 </Typography>
@@ -396,12 +500,13 @@ const EmployeeList = () => {
                   p: 2,
                   borderRadius: 2,
                   backgroundColor: "white",
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Typography
-                  variant="h4"
+                  variant="h3"
                   fontWeight={700}
-                  sx={{ color: "#A5C9FF" }}
+                  sx={{ color: "#2196F3" }}
                 >
                   {employees.filter((emp) => emp.role === "manager").length}
                 </Typography>
@@ -416,23 +521,27 @@ const EmployeeList = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 8,
+              p: { xs: 4, sm: 8 },
               textAlign: "center",
               borderRadius: 3,
               background:
                 "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
-              border: "1px solid rgba(139, 126, 200, 0.1)",
+              border: `1px solid ${theme.palette.divider}`,
             }}
           >
             <Group
               sx={{
-                fontSize: 60,
-                color: "text.secondary",
+                fontSize: { xs: 50, sm: 60 },
+                color: theme.palette.text.secondary,
                 mb: 2,
                 opacity: 0.7,
               }}
             />
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+            <Typography
+              variant="h5"
+              gutterBottom
+              sx={{ fontWeight: theme.typography.fontWeightMedium }}
+            >
               {searchTerm || filterRole !== "all"
                 ? "No team members found"
                 : "No team members yet"}
@@ -452,11 +561,23 @@ const EmployeeList = () => {
                 startIcon={<Add />}
                 onClick={() => handleOpenDialog("create")}
                 sx={{
-                  borderRadius: 2,
+                  borderRadius:
+                    theme.components?.MuiButton?.styleOverrides?.root
+                      ?.borderRadius || theme.shape.borderRadius,
                   px: 4,
                   py: 1.5,
                   textTransform: "none",
-                  fontWeight: 600,
+                  fontWeight: theme.typography.fontWeightMedium,
+                  background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.light} 90%)`,
+                  boxShadow:
+                    theme.components?.MuiButton?.styleOverrides?.contained
+                      ?.boxShadow || "none",
+                  "&:hover": {
+                    background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
+                    boxShadow:
+                      theme.components?.MuiButton?.styleOverrides?.contained
+                        ?.boxShadow || "none",
+                  },
                 }}
               >
                 Add Your First Team Member
@@ -466,7 +587,7 @@ const EmployeeList = () => {
         ) : (
           <Grid container spacing={3}>
             {filteredEmployees.map((employee, index) => (
-              <Grid item xs={12} sm={6} md={4} key={employee.id}>
+              <Grid item xs={12} sm={6} md={4} key={employee.id || index}>
                 <Fade in={true} timeout={600 + index * 100}>
                   <Card
                     sx={{
@@ -476,9 +597,13 @@ const EmployeeList = () => {
                       borderRadius: 3,
                       transition: "all 0.3s ease-in-out",
                       "&:hover": {
-                        transform: "translateY(-4px)",
-                        boxShadow: "0 8px 32px rgba(139, 126, 200, 0.15)",
+                        transform: "translateY(-5px)",
                       },
+                    }}
+                    onClick={(e) => {
+                      if (!e.target.closest(".menu-button")) {
+                        handleOpenDialog("edit", employee);
+                      }
                     }}
                   >
                     <CardContent sx={{ flexGrow: 1, p: 3 }}>
@@ -502,8 +627,9 @@ const EmployeeList = () => {
                                 width: 12,
                                 height: 12,
                                 borderRadius: "50%",
-                                backgroundColor: "#A8E6CF",
-                                border: "2px solid white",
+                                background:
+                                  "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                                border: `1px solid ${theme.palette.divider}`,
                               }}
                             />
                           }
@@ -524,29 +650,31 @@ const EmployeeList = () => {
                         <IconButton
                           size="small"
                           onClick={(e) => handleMenuOpen(e, employee)}
-                          sx={{ opacity: 0.7, "&:hover": { opacity: 1 } }}
+                          sx={{
+                            opacity: 0.8,
+                            color: theme.palette.text.secondary,
+                            "&:hover": {
+                              opacity: 1,
+                              color: getRoleColor(employee.role),
+                              backgroundColor: theme.palette.action.hover,
+                            },
+                          }}
                         >
                           <MoreVert />
                         </IconButton>
                       </Box>
-                      <Typography variant="h6" fontWeight={600} gutterBottom>
+                      <Typography
+                        variant="h6"
+                        fontWeight={theme.typography.fontWeightMedium}
+                        gutterBottom
+                      >
                         {employee.name}
                       </Typography>
-                      <Chip
-                        label={employee.role}
-                        size="small"
-                        sx={{
-                          backgroundColor: `${getRoleColor(employee.role)}20`,
-                          color: getRoleColor(employee.role),
-                          fontWeight: 500,
-                          mb: 2,
-                        }}
-                      />
                       <Box
                         sx={{
                           display: "flex",
                           flexDirection: "column",
-                          gap: 1,
+                          gap: 1.5,
                           mb: 2,
                         }}
                       >
@@ -559,7 +687,10 @@ const EmployeeList = () => {
                             }}
                           >
                             <Email
-                              sx={{ fontSize: 16, color: "text.secondary" }}
+                              sx={{
+                                fontSize: 18,
+                                color: theme.palette.text.secondary,
+                              }}
                             />
                             <Typography variant="body2" color="text.secondary">
                               {employee.email}
@@ -575,86 +706,32 @@ const EmployeeList = () => {
                             }}
                           >
                             <Phone
-                              sx={{ fontSize: 16, color: "text.secondary" }}
+                              sx={{
+                                fontSize: 18,
+                                color: theme.palette.text.secondary,
+                              }}
                             />
                             <Typography variant="body2" color="text.secondary">
                               {employee.phone}
                             </Typography>
                           </Box>
                         )}
-                        {employee.department && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Work
-                              sx={{ fontSize: 16, color: "text.secondary" }}
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                              {employee.department}
-                            </Typography>
-                          </Box>
-                        )}
                       </Box>
-                      {employee.skills && employee.skills.length > 0 && (
-                        <Box sx={{ mb: 2 }}>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            gutterBottom
-                          >
-                            Skills
-                          </Typography>
-                          <Box
-                            sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
-                          >
-                            {employee.skills
-                              .slice(0, 3)
-                              .map((skill, skillIndex) => (
-                                <Chip
-                                  key={skillIndex}
-                                  label={skill}
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{
-                                    fontSize: "0.7rem",
-                                    height: 20,
-                                    borderColor: "rgba(139, 126, 200, 0.3)",
-                                    color: "text.secondary",
-                                  }}
-                                />
-                              ))}
-                            {employee.skills.length > 3 && (
-                              <Chip
-                                label={`+${employee.skills.length - 3}`}
-                                size="small"
-                                sx={{
-                                  fontSize: "0.7rem",
-                                  height: 20,
-                                  backgroundColor: "rgba(139, 126, 200, 0.1)",
-                                  color: "#8B7EC8",
-                                }}
-                              />
-                            )}
-                          </Box>
-                        </Box>
-                      )}
                       <Grid container spacing={2}>
                         <Grid item xs={6}>
                           <Box
                             sx={{
                               textAlign: "center",
-                              p: 1,
+                              p: 1.5,
                               borderRadius: 1,
-                              backgroundColor: "rgba(139, 126, 200, 0.1)",
+                              background:
+                                "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                              border: `1px solid ${theme.palette.divider}`,
                             }}
                           >
                             <Typography
-                              variant="body2"
-                              fontWeight={600}
+                              variant="h6"
+                              fontWeight={theme.typography.fontWeightBold}
                               color="primary"
                             >
                               {getEmployeeProjects(employee.id).length}
@@ -662,6 +739,7 @@ const EmployeeList = () => {
                             <Typography
                               variant="caption"
                               color="text.secondary"
+                              sx={{ display: "block" }}
                             >
                               Projects
                             </Typography>
@@ -671,21 +749,24 @@ const EmployeeList = () => {
                           <Box
                             sx={{
                               textAlign: "center",
-                              p: 1,
+                              p: 1.5,
                               borderRadius: 1,
-                              backgroundColor: "rgba(168, 230, 207, 0.1)",
+                              background:
+                                "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                              border: `1px solid ${theme.palette.divider}`,
                             }}
                           >
                             <Typography
-                              variant="body2"
-                              fontWeight={600}
-                              sx={{ color: "#A8E6CF" }}
+                              variant="h6"
+                              fontWeight={theme.typography.fontWeightBold}
+                              sx={{ color: theme.palette.success.main }}
                             >
                               {getEmployeeTasks(employee.id).length}
                             </Typography>
                             <Typography
                               variant="caption"
                               color="text.secondary"
+                              sx={{ display: "block" }}
                             >
                               Tasks
                             </Typography>
@@ -697,16 +778,19 @@ const EmployeeList = () => {
                       <Button
                         fullWidth
                         variant="outlined"
-                        size="small"
+                        size="medium"
                         onClick={() => handleOpenDialog("edit", employee)}
                         sx={{
-                          borderRadius: 2,
+                          borderRadius:
+                            theme.components?.MuiButton?.styleOverrides?.root
+                              ?.borderRadius || theme.shape.borderRadius,
                           textTransform: "none",
-                          borderColor: "rgba(139, 126, 200, 0.3)",
-                          color: "#8B7EC8",
+                          borderColor: theme.palette.primary.main,
+                          color: theme.palette.primary.main,
+                          fontWeight: theme.typography.fontWeightMedium,
                           "&:hover": {
-                            borderColor: "#8B7EC8",
-                            backgroundColor: "rgba(139, 126, 200, 0.1)",
+                            borderColor: theme.palette.primary.light,
+                            backgroundColor: theme.palette.action.hover,
                           },
                         }}
                       >
@@ -723,15 +807,25 @@ const EmployeeList = () => {
           anchorEl={menuAnchorEl}
           open={Boolean(menuAnchorEl)}
           onClose={handleMenuClose}
-          PaperProps={{
-            sx: { borderRadius: 2, minWidth: 150 },
-          }}
         >
-          <MenuItem onClick={() => handleOpenDialog("edit", selectedEmployee)}>
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent event bubbling
+              handleOpenDialog("edit", selectedEmployee);
+              handleMenuClose();
+            }}
+          >
             <Edit fontSize="small" sx={{ mr: 1 }} />
             Edit
           </MenuItem>
-          <MenuItem onClick={handleDeleteEmployee} sx={{ color: "error.main" }}>
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteClick();
+              handleMenuClose();
+            }}
+            sx={{ color: "error.main" }}
+          >
             <Delete fontSize="small" sx={{ mr: 1 }} />
             Delete
           </MenuItem>
@@ -757,6 +851,7 @@ const EmployeeList = () => {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -768,12 +863,13 @@ const EmployeeList = () => {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, email: e.target.value }))
                   }
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Phone"
+                  label="Phone (Optional)"
                   value={formData.phone}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, phone: e.target.value }))
@@ -781,7 +877,7 @@ const EmployeeList = () => {
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
+                <FormControl fullWidth required>
                   <InputLabel>Role</InputLabel>
                   <Select
                     value={formData.role}
@@ -855,12 +951,26 @@ const EmployeeList = () => {
             <Button
               variant="contained"
               onClick={handleSaveEmployee}
-              disabled={!formData.name.trim() || !formData.email.trim()}
+              disabled={isUpdating}
             >
-              {dialogType === "create" ? "Add Member" : "Save Changes"}
+              {isUpdating ? (
+                <CircularProgress size={24} />
+              ) : dialogType === "create" ? (
+                "Add Member"
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </DialogActions>
         </Dialog>
+        <ConfirmationDialog
+          open={confirmDialogOpen}
+          onClose={handleCloseConfirmationDialog}
+          onConfirm={confirmAction}
+          title={confirmDialogTitle}
+          message={confirmDialogMessage}
+          loading={isDeleting || isUpdating}
+        />
       </Box>
     </Fade>
   );
