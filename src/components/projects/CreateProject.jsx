@@ -36,6 +36,7 @@ import {
   Group,
   AccessTime,
   NavigateNext,
+  Add,
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
 
@@ -66,7 +67,7 @@ const statusOptions = [
   { value: "planning", label: "Planning", color: "#64B5F6" },
   { value: "in-progress", label: "In Progress", color: "#FFB74D" },
   { value: "completed", label: "Completed", color: "#81C784" },
-  { value: "on-hold", label: "On Hold", color: "#BDBDBD" },
+  { value: "on-hold", label: "On Hold", color: "#F44336" },
 ];
 
 const priorityOptions = [
@@ -341,6 +342,59 @@ const CreateProject = () => {
           </Box>
         );
       case 1:
+        if (categories.length === 0) {
+          return (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                py: 8,
+                px: 3,
+                border: `2px dashed ${theme.palette.divider}`,
+                borderRadius: 2,
+                backgroundColor: theme.palette.background.paper,
+              }}
+            >
+              <Add
+                sx={{
+                  fontSize: 60,
+                  color: theme.palette.text.secondary,
+                  mb: 2,
+                }}
+              />
+              <Typography
+                variant="h5"
+                color="text.primary"
+                fontWeight={600}
+                gutterBottom
+              >
+                No Categories Found
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                It looks like there are no categories set up yet. Please add
+                categories to proceed with project creation.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => navigate("/categories")}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1.5,
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Add Category
+              </Button>
+            </Box>
+          );
+        }
+
         return (
           <Box>
             <Collapse in={!!errors.categories}>

@@ -13,7 +13,6 @@ import {
   Avatar,
   Chip,
   IconButton,
-  Menu,
   MenuItem,
   Dialog,
   DialogTitle,
@@ -34,14 +33,14 @@ import useProject from "../../hooks/useProject";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 
 const roleOptions = [
-  { value: "all", label: "All Roles" },
-  { value: "developer", label: "Developer" },
-  { value: "designer", label: "Designer" },
-  { value: "manager", label: "Project Manager" },
-  { value: "analyst", label: "Business Analyst" },
-  { value: "tester", label: "QA Tester" },
-  { value: "devops", label: "DevOps Engineer" },
-  { value: "data_scientist", label: "Data Scientist" },
+  { value: "all", label: "All Roles", color: "#607D8B" },
+  { value: "developer", label: "Developer", color: "#4CAF50" },
+  { value: "designer", label: "Designer", color: "#FF9800" },
+  { value: "manager", label: "Project Manager", color: "#2196F3" },
+  { value: "analyst", label: "Business Analyst", color: "#E91E63" },
+  { value: "tester", label: "QA Tester", color: "#00BCD4" },
+  { value: "devops", label: "DevOps Engineer", color: "#9C27B0" },
+  { value: "data_scientist", label: "Data Scientist", color: "#795548" },
 ];
 
 const departmentOptions = [
@@ -115,9 +114,9 @@ const EmployeeList = () => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const filteredEmployees = employees.filter((employee) => {
-    const employeeName = employee.name?.toLowerCase() || "";
-    const employeeEmail = employee.email?.toLowerCase() || "";
-    const employeeRole = employee.role?.toLowerCase() || "";
+    const employeeName = employee.name?.toLowerCase();
+    const employeeEmail = employee.email?.toLowerCase();
+    const employeeRole = employee.role?.toLowerCase();
 
     const matchesSearch =
       employeeName.includes(searchTerm.toLowerCase()) ||
@@ -141,12 +140,12 @@ const EmployeeList = () => {
     setDialogType(type);
     if (employee) {
       setFormData({
-        name: employee.name || "",
-        email: employee.email || "",
-        phone: employee.phone || "",
-        role: employee.role || "",
-        department: employee.department || "",
-        skills: employee.skills || [],
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone,
+        role: employee.role,
+        department: employee.department,
+        skills: employee.skills,
       });
       setSelectedEmployee(employee);
     } else {
@@ -411,7 +410,23 @@ const EmployeeList = () => {
                 >
                   {roleOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
-                      {option.label}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            backgroundColor: option.color,
+                          }}
+                        />
+                        {option.label}
+                      </Box>
                     </MenuItem>
                   ))}
                 </Select>
@@ -419,7 +434,7 @@ const EmployeeList = () => {
             </Grid>
           </Grid>
           <Grid container spacing={2} sx={{ mt: 2 }}>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={12} sm={6} md={3}>
               <Box
                 sx={{
                   textAlign: "center",
@@ -427,82 +442,57 @@ const EmployeeList = () => {
                   borderRadius: 2,
                   backgroundColor: "white",
                   border: `1px solid ${theme.palette.divider}`,
+                  height: "100%",
                 }}
               >
                 <Typography variant="h3" fontWeight={700} color="primary">
                   {employees.length}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                >
                   Total Members
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box
-                sx={{
-                  textAlign: "center",
-                  p: 2,
-                  borderRadius: 2,
-                  backgroundColor: "white",
-                  border: `1px solid ${theme.palette.divider}`,
-                }}
-              >
-                <Typography
-                  variant="h3"
-                  fontWeight={700}
-                  sx={{ color: "#4CAF50" }}
-                >
-                  {employees.filter((emp) => emp.role === "developer").length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Developers
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box
-                sx={{
-                  textAlign: "center",
-                  p: 2,
-                  borderRadius: 2,
-                  backgroundColor: "white",
-                  border: `1px solid ${theme.palette.divider}`,
-                }}
-              >
-                <Typography
-                  variant="h3"
-                  fontWeight={700}
-                  sx={{ color: "#FF9800" }}
-                >
-                  {employees.filter((emp) => emp.role === "designer").length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Designers
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Box
-                sx={{
-                  textAlign: "center",
-                  p: 2,
-                  borderRadius: 2,
-                  backgroundColor: "white",
-                  border: `1px solid ${theme.palette.divider}`,
-                }}
-              >
-                <Typography
-                  variant="h3"
-                  fontWeight={700}
-                  sx={{ color: "#2196F3" }}
-                >
-                  {employees.filter((emp) => emp.role === "manager").length}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Managers
-                </Typography>
-              </Box>
-            </Grid>
+            {roleOptions
+              .filter((role) => role.value !== "all")
+              .map((role) => (
+                <Grid item xs={12} sm={6} md={3} key={role.value}>
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      p: 2,
+                      borderRadius: 2,
+                      backgroundColor: "white",
+                      border: `1px solid ${theme.palette.divider}`,
+                      height: "100%",
+                    }}
+                  >
+                    <Typography
+                      variant="h3"
+                      fontWeight={700}
+                      sx={{
+                        color: role.color || theme.palette.text.primary, // Changed to use role.color directly
+                      }}
+                    >
+                      {
+                        employees.filter((emp) => emp.role === role.value)
+                          .length
+                      }
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 0.5 }}
+                    >
+                      {role.label}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
           </Grid>
         </Paper>
         {filteredEmployees.length === 0 ? (
@@ -856,7 +846,23 @@ const EmployeeList = () => {
                   >
                     {roleOptions.slice(1).map((option) => (
                       <MenuItem key={option.value} value={option.value}>
-                        {option.label}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: "50%",
+                              backgroundColor: option.color,
+                            }}
+                          />
+                          {option.label}
+                        </Box>
                       </MenuItem>
                     ))}
                   </Select>
