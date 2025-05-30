@@ -56,6 +56,7 @@ import {
   DonutLarge,
   Cached,
   HourglassEmpty,
+  Block,
 } from "@mui/icons-material";
 import useProject from "../../hooks/useProject";
 import { stringToColor } from "../../helpers/stringToColor";
@@ -64,10 +65,23 @@ const statusOptions = [
   { value: "planning", label: "Planning", color: "#64B5F6" },
   { value: "in-progress", label: "In Progress", color: "#FFB74D" },
   { value: "completed", label: "Completed", color: "#81C784" },
-  { value: "on-hold", label: "On Hold", color: "#BDBDBD" },
+  { value: "on-hold", label: "On Hold", color: "#F44336" },
 ];
 
 const priorityOptions = [
+  { value: "low", label: "Low", color: "#6BBF6B" },
+  { value: "medium", label: "Medium", color: "#FFD700" },
+  { value: "high", label: "High", color: "#DC3545" },
+];
+
+const taskStatusOptions = [
+  { value: "pending", label: "Pending", color: "#64B5F6" },
+  { value: "in-progress", label: "In Progress", color: "#FFB74D" },
+  { value: "completed", label: "Completed", color: "#81C784" },
+  { value: "blocked", label: "Blocked", color: "#F44336" },
+];
+
+const taskPriorityOptions = [
   { value: "low", label: "Low", color: "#6BBF6B" },
   { value: "medium", label: "Medium", color: "#FFD700" },
   { value: "high", label: "High", color: "#DC3545" },
@@ -127,11 +141,11 @@ const ProjectDetails = () => {
     if (foundProject) {
       setProject(foundProject);
       setEditForm({
-        name: foundProject.name || "",
-        description: foundProject.description || "",
-        status: foundProject.status || "planning",
-        priority: foundProject.priority || "medium",
-        dueDate: foundProject.dueDate || null,
+        name: foundProject.name,
+        description: foundProject.description,
+        status: foundProject.status,
+        priority: foundProject.priority,
+        dueDate: foundProject.dueDate,
       });
     }
 
@@ -140,16 +154,6 @@ const ProjectDetails = () => {
 
     setLoading(false);
   }, [id, projects, tasks]);
-
-  const getStatusColor = (status) => {
-    return statusOptions.find((s) => s.value === status)?.color || "#E6E6FA";
-  };
-
-  const getPriorityColor = (priority) => {
-    return (
-      priorityOptions.find((p) => p.value === priority)?.color || "#E6E6FA"
-    );
-  };
 
   const calculateProgress = () => {
     if (projectTasks.length === 0) return 0;
@@ -242,6 +246,47 @@ const ProjectDetails = () => {
     return projectTasks.filter((task) => task.status === status);
   };
 
+  const quickStats = [
+    {
+      label: "Total Tasks",
+      value: projectTasks.length,
+      icon: <DonutLarge />,
+      color: theme.palette.primary.main,
+    },
+    {
+      label: "Completed",
+      value: getTasksByStatus("completed").length,
+      icon: <CheckCircleOutline />,
+      color:
+        taskStatusOptions.find((opt) => opt.value === "completed")?.color ||
+        "#81C784",
+    },
+    {
+      label: "In Progress",
+      value: getTasksByStatus("in-progress").length,
+      icon: <Cached />,
+      color:
+        taskStatusOptions.find((opt) => opt.value === "in-progress")?.color ||
+        "#FFB74D",
+    },
+    {
+      label: "Pending",
+      value: getTasksByStatus("pending").length,
+      icon: <HourglassEmpty />,
+      color:
+        taskStatusOptions.find((opt) => opt.value === "pending")?.color ||
+        "#64B5F6",
+    },
+    {
+      label: "Blocked",
+      value: getTasksByStatus("blocked").length,
+      icon: <Block />,
+      color:
+        taskStatusOptions.find((opt) => opt.value === "blocked")?.color ||
+        "#F44336",
+    },
+  ];
+
   if (loading) {
     return (
       <Box>
@@ -289,6 +334,14 @@ const ProjectDetails = () => {
     new Date(
       project.dueDate.toDate ? project.dueDate.toDate() : project.dueDate
     ) < new Date();
+
+  const projectStatusColor =
+    statusOptions.find((s) => s.value === project.status)?.color ||
+    theme.palette.text.secondary;
+    
+  const projectPriorityColor =
+    priorityOptions.find((p) => p.value === project.priority)?.color ||
+    theme.palette.text.secondary;
 
   return (
     <Fade in={true} timeout={600}>
@@ -358,10 +411,10 @@ const ProjectDetails = () => {
                   }
                   size="small"
                   sx={{
-                    backgroundColor: getStatusColor(project.status) + "20",
-                    color: getStatusColor(project.status),
+                    backgroundColor: `${projectStatusColor}20`,
+                    color: projectStatusColor,
                     fontWeight: 600,
-                    border: `1px solid ${getStatusColor(project.status)}40`,
+                    border: `1px solid ${projectStatusColor}40`,
                   }}
                 />
                 <Chip
@@ -371,10 +424,10 @@ const ProjectDetails = () => {
                   }
                   size="small"
                   sx={{
-                    backgroundColor: getPriorityColor(project.priority) + "20",
-                    color: getPriorityColor(project.priority),
+                    backgroundColor: `${projectPriorityColor}20`,
+                    color: projectPriorityColor,
                     fontWeight: 600,
-                    border: `1px solid ${getPriorityColor(project.priority)}40`,
+                    border: `1px solid ${projectPriorityColor}40`,
                   }}
                 />
                 {project.dueDate && (
@@ -493,14 +546,14 @@ const ProjectDetails = () => {
                         projectTasks.filter((t) => t.status === "completed")
                           .length
                       }
-                    </Box>{" "}
-                    of{" "}
+                    </Box>
+                    of
                     <Box
                       component="span"
                       sx={{ color: "text.primary", fontWeight: 600 }}
                     >
                       {projectTasks.length}
-                    </Box>{" "}
+                    </Box>
                     tasks completed
                   </Typography>
                 </Box>
@@ -558,7 +611,7 @@ const ProjectDetails = () => {
                         color="text.secondary"
                         sx={{ lineHeight: 1.7 }}
                       >
-                        {project.description || "No description provided"}
+                        {project.description}
                       </Typography>
                     </Paper>
 
@@ -685,139 +738,156 @@ const ProjectDetails = () => {
                     </Box>
                   ) : (
                     <List>
-                      {projectTasks.map((task) => (
-                        <ListItem
-                          key={task.id}
-                          disabled={isSubmitting.taskUpdate === task.id}
-                          sx={{
-                            borderRadius: 2,
-                            mb: 1,
-                            p: 0,
-                            background:
-                              "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
-                            border: (theme) =>
-                              `1px solid ${theme.palette.divider}`,
-                            "&:hover": {
-                              backgroundColor: "action.hover",
-                            },
-                          }}
-                        >
-                          <ListItemButton
+                      {projectTasks.map((task) => {
+                        const currentTaskStatus = taskStatusOptions.find(
+                          (opt) => opt.value === task.status
+                        );
+                        const currentTaskPriority = taskPriorityOptions.find(
+                          (opt) => opt.value === task.priority
+                        );
+                        const completedTaskStatusColor =
+                          taskStatusOptions.find((s) => s.value === "completed")
+                            ?.color || "#81C784";
+
+                        return (
+                          <ListItem
+                            key={task.id}
+                            disabled={isSubmitting.taskUpdate === task.id}
                             sx={{
                               borderRadius: 2,
-                              py: 1.5,
-                              px: 2,
+                              mb: 1,
+                              p: 0,
+                              background:
+                                "linear-gradient(135deg, rgba(139, 126, 200, 0.03), rgba(181, 169, 214, 0.05))",
+                              border: (theme) =>
+                                `1px solid ${theme.palette.divider}`,
+                              "&:hover": {
+                                backgroundColor: "action.hover",
+                              },
                             }}
                           >
-                            <ListItemIcon sx={{ minWidth: 40 }}>
-                              {isSubmitting.taskUpdate === task.id ? (
-                                <CircularProgress size={24} />
-                              ) : (
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleTaskStatusChange(
-                                      task.id,
-                                      task.status === "completed"
-                                        ? "pending"
-                                        : "completed"
-                                    );
-                                  }}
-                                  sx={{
-                                    "&:hover": {
-                                      backgroundColor:
-                                        getStatusColor(task.status) + "20",
-                                    },
-                                  }}
-                                >
-                                  <CheckCircle
+                            <ListItemButton
+                              sx={{
+                                borderRadius: 2,
+                                py: 1.5,
+                                px: 2,
+                              }}
+                            >
+                              <ListItemIcon sx={{ minWidth: 40 }}>
+                                {isSubmitting.taskUpdate === task.id ? (
+                                  <CircularProgress size={24} />
+                                ) : (
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTaskStatusChange(
+                                        task.id,
+                                        task.status === "completed"
+                                          ? "pending"
+                                          : "completed"
+                                      );
+                                    }}
                                     sx={{
+                                      "&:hover": {
+                                        backgroundColor: `${
+                                          currentTaskStatus?.color ||
+                                          theme.palette.action.hover
+                                        }20`,
+                                      },
+                                    }}
+                                  >
+                                    <CheckCircle
+                                      sx={{
+                                        color:
+                                          task.status === "completed"
+                                            ? completedTaskStatusColor
+                                            : "text.disabled",
+                                      }}
+                                    />
+                                  </IconButton>
+                                )}
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={
+                                  <Typography
+                                    variant="body1"
+                                    sx={{
+                                      textDecoration:
+                                        task.status === "completed"
+                                          ? "line-through"
+                                          : "none",
                                       color:
                                         task.status === "completed"
-                                          ? getStatusColor("completed")
-                                          : "text.disabled",
+                                          ? "text.secondary"
+                                          : "text.primary",
+                                      fontWeight:
+                                        task.status === "completed" ? 400 : 500,
                                     }}
-                                  />
-                                </IconButton>
-                              )}
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={
-                                <Typography
-                                  variant="body1"
-                                  sx={{
-                                    textDecoration:
-                                      task.status === "completed"
-                                        ? "line-through"
-                                        : "none",
-                                    color:
-                                      task.status === "completed"
-                                        ? "text.secondary"
-                                        : "text.primary",
-                                    fontWeight:
-                                      task.status === "completed" ? 400 : 500,
-                                  }}
-                                >
-                                  {task.name}
-                                </Typography>
-                              }
-                              secondary={
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    mt: 0.5,
-                                    flexWrap: "wrap",
-                                  }}
-                                >
-                                  <Chip
-                                    label={
-                                      statusOptions.find(
-                                        (opt) => opt.value === task.status
-                                      )?.label || task.status
-                                    }
-                                    size="small"
+                                  >
+                                    {task.name}
+                                  </Typography>
+                                }
+                                secondary={
+                                  <Box
                                     sx={{
-                                      height: 20,
-                                      fontSize: "0.65rem",
-                                      backgroundColor:
-                                        getStatusColor(task.status) + "20",
-                                      color: getStatusColor(task.status),
-                                      fontWeight: 600,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
+                                      mt: 0.5,
+                                      flexWrap: "wrap",
                                     }}
-                                  />
-                                  <Chip
-                                    label={
-                                      priorityOptions.find(
-                                        (opt) => opt.value === task.priority
-                                      )?.label || task.priority
-                                    }
-                                    size="small"
-                                    sx={{
-                                      height: 20,
-                                      fontSize: "0.65rem",
-                                      backgroundColor:
-                                        getPriorityColor(task.priority) + "20",
-                                      color: getPriorityColor(task.priority),
-                                      fontWeight: 600,
-                                    }}
-                                  />
-                                  {task.category && (
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                    >
-                                      {task.category}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              }
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                      ))}
+                                  >
+                                    <Chip
+                                      label={
+                                        currentTaskStatus?.label || task.status
+                                      }
+                                      size="small"
+                                      sx={{
+                                        height: 20,
+                                        fontSize: "0.65rem",
+                                        backgroundColor: `${
+                                          currentTaskStatus?.color || "#757575"
+                                        }20`,
+                                        color:
+                                          currentTaskStatus?.color || "#757575",
+                                        fontWeight: 600,
+                                      }}
+                                    />
+                                    <Chip
+                                      label={
+                                        currentTaskPriority?.label ||
+                                        task.priority
+                                      }
+                                      size="small"
+                                      sx={{
+                                        height: 20,
+                                        fontSize: "0.65rem",
+                                        backgroundColor: `${
+                                          currentTaskPriority?.color ||
+                                          "#757575"
+                                        }20`,
+                                        color:
+                                          currentTaskPriority?.color ||
+                                          "#757575",
+                                        fontWeight: 600,
+                                      }}
+                                    />
+                                    {task.category && (
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                      >
+                                        {task.category}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                }
+                              />
+                            </ListItemButton>
+                          </ListItem>
+                        );
+                      })}
                     </List>
                   ))}
                 {tabValue === 2 && (
@@ -916,7 +986,7 @@ const ProjectDetails = () => {
                         Created by
                       </Typography>
                       <Typography variant="body1" fontWeight={500}>
-                        {project.createdByName || "Unknown"}
+                        {project.createdByName}
                       </Typography>
                     </Box>
                   </Box>
@@ -959,7 +1029,7 @@ const ProjectDetails = () => {
                           }}
                           src={member.photoURL}
                         >
-                          {(member.name || member.email || "TM")
+                          {(member.name || member.email)
                             .charAt(0)
                             .toUpperCase()}
                         </Avatar>
@@ -996,32 +1066,7 @@ const ProjectDetails = () => {
                   Quick Stats
                 </Typography>
                 <Grid container spacing={2} sx={{ mt: 0.5 }}>
-                  {[
-                    {
-                      label: "Total Tasks",
-                      value: projectTasks.length,
-                      icon: <DonutLarge />,
-                      color: theme.palette.primary.main,
-                    },
-                    {
-                      label: "Completed",
-                      value: getTasksByStatus("completed").length,
-                      icon: <CheckCircleOutline />,
-                      color: "#81C784",
-                    },
-                    {
-                      label: "In Progress",
-                      value: getTasksByStatus("in-progress").length,
-                      icon: <Cached />,
-                      color: "#FFB74D",
-                    },
-                    {
-                      label: "Pending",
-                      value: getTasksByStatus("pending").length,
-                      icon: <HourglassEmpty />,
-                      color: "#64B5F6",
-                    },
-                  ].map((stat) => (
+                  {quickStats.map((stat) => (
                     <Grid item xs={6} key={stat.label}>
                       <Card
                         elevation={0}
@@ -1029,8 +1074,8 @@ const ProjectDetails = () => {
                           p: 2,
                           borderRadius: 3,
                           textAlign: "left",
-                          backgroundColor: stat.color + "20",
-                          border: `1px solid ${stat.color + "60"}`,
+                          backgroundColor: `${stat.color}20`,
+                          border: `1px solid ${stat.color}60`,
                         }}
                       >
                         <Box sx={{ color: stat.color, mb: 1 }}>{stat.icon}</Box>
@@ -1241,9 +1286,27 @@ const ProjectDetails = () => {
                       }))
                     }
                   >
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="in-progress">In Progress</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
+                    {taskStatusOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: "50%",
+                              backgroundColor: option.color,
+                            }}
+                          />
+                          {option.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
@@ -1260,9 +1323,27 @@ const ProjectDetails = () => {
                       }))
                     }
                   >
-                    <MenuItem value="low">Low</MenuItem>
-                    <MenuItem value="medium">Medium</MenuItem>
-                    <MenuItem value="high">High</MenuItem>
+                    {taskPriorityOptions.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: "50%",
+                              backgroundColor: option.color,
+                            }}
+                          />
+                          {option.label}
+                        </Box>
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>

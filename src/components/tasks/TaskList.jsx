@@ -49,14 +49,14 @@ const statusOptions = [
   { value: "pending", label: "Pending", color: "#64B5F6" },
   { value: "in-progress", label: "In Progress", color: "#FFB74D" },
   { value: "completed", label: "Completed", color: "#81C784" },
-  { value: "blocked", label: "Blocked", color: "#E57373" },
+  { value: "blocked", label: "Blocked", color: "#F44336" },
 ];
 
 const priorityOptions = [
   { value: "all", label: "All Priorities", color: "#9E9E9E" },
-  { value: "low", label: "Low", color: "#81C784" },
-  { value: "medium", label: "Medium", color: "#FFD54F" },
-  { value: "high", label: "High", color: "#FFB74D" },
+  { value: "low", label: "Low", color: "#6BBF6B" },
+  { value: "medium", label: "Medium", color: "#FFD700" },
+  { value: "high", label: "High", color: "#DC3545" },
 ];
 
 const TaskList = () => {
@@ -346,26 +346,40 @@ const TaskList = () => {
                       (option) => option.value === selected
                     );
                     return (
-                      <span
-                        style={{ color: selectedOption?.color || "#E6E6FA" }}
-                      >
-                        {selectedOption?.label || "Select Status"}
+                      <span style={{ display: "flex", alignItems: "center" }}>
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            backgroundColor: selectedOption.color,
+                            mr: 1,
+                          }}
+                        />
+                        {selectedOption.label}
                       </span>
                     );
                   }}
                 >
                   {statusOptions.map((option) => (
-                    <MenuItem
-                      key={option.value}
-                      value={option.value}
-                      sx={{
-                        color:
-                          option.value === "all"
-                            ? "text.primary"
-                            : option.color,
-                      }}
-                    >
-                      {option.label}
+                    <MenuItem key={option.value} value={option.value}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            backgroundColor: option.color,
+                          }}
+                        />
+                        {option.label}
+                      </Box>
                     </MenuItem>
                   ))}
                 </Select>
@@ -384,26 +398,40 @@ const TaskList = () => {
                       (option) => option.value === selected
                     );
                     return (
-                      <span
-                        style={{ color: selectedOption?.color || "#E6E6FA" }}
-                      >
-                        {selectedOption?.label || "Select Priority"}
+                      <span style={{ display: "flex", alignItems: "center" }}>
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            backgroundColor: selectedOption.color,
+                            mr: 1,
+                          }}
+                        />
+                        {selectedOption.label}
                       </span>
                     );
                   }}
                 >
                   {priorityOptions.map((option) => (
-                    <MenuItem
-                      key={option.value}
-                      value={option.value}
-                      sx={{
-                        color:
-                          option.value === "all"
-                            ? "text.primary"
-                            : option.color,
-                      }}
-                    >
-                      {option.label}
+                    <MenuItem key={option.value} value={option.value}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            backgroundColor: option.color,
+                          }}
+                        />
+                        {option.label}
+                      </Box>
                     </MenuItem>
                   ))}
                 </Select>
@@ -516,13 +544,33 @@ const TaskList = () => {
                 <Typography
                   variant="h4"
                   fontWeight={700}
-                  // Use getStatusColor to fetch the standard color for 'pending'
                   sx={{ color: getStatusColor("pending") }}
                 >
                   {getTasksByStatus("pending")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Pending
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <Box
+                sx={{
+                  textAlign: "center",
+                  p: 2,
+                  borderRadius: 2,
+                  backgroundColor: "white",
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  fontWeight={700}
+                  sx={{ color: getStatusColor("blocked") }}
+                >
+                  {getTasksByStatus("blocked")}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Blocked
                 </Typography>
               </Box>
             </Grid>
@@ -543,7 +591,7 @@ const TaskList = () => {
             <Assignment
               sx={{
                 fontSize: 60,
-                color: "text.secondary",
+                color: "#8E80B1",
                 mb: 2,
                 opacity: 0.7,
               }}
@@ -739,7 +787,6 @@ const TaskList = () => {
                             onClick={() =>
                               handleStatusChange(task.id, "completed")
                             }
-                            // Use getStatusColor for the 'completed' status
                             sx={{ color: getStatusColor("completed") }}
                           >
                             <CheckCircle />
@@ -751,7 +798,6 @@ const TaskList = () => {
                             onClick={() =>
                               handleStatusChange(task.id, "in-progress")
                             }
-                            // Use getStatusColor for the 'in-progress' status
                             sx={{ color: getStatusColor("in-progress") }}
                           >
                             <PlayArrow />

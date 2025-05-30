@@ -84,7 +84,7 @@ const ProjectCard = ({ project }) => {
       case "completed":
         return "#81C784";
       case "on-hold":
-        return "#BDBDBD";
+        return "#F44336";
       default:
         return "#E6E6FA";
     }
